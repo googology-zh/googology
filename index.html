@@ -221,9 +221,9 @@
   <aside class="rail rail-left" aria-labelledby="about-title">
     <h2 id="about-title">关于</h2>
     <p>Googology Pages 是大数记法方向的内容站点，收录相关的笔记、说明与工具。</p>
-    <p>站点现设两个栏目：博客用于发布成篇的笔记与讨论，展开器用于汇集可交互的记法工具。</p>
+    <p>站点现设三个栏目：博客用于发布成篇的笔记与讨论，展开器用于汇集可交互的记法工具，定义用于收录术语与特殊定义。</p>
     <p>站点为纯静态页面，只使用 HTML 与 CSS，不引入前端框架。</p>
-    <p class="rail-meta">栏目 2 · 页面 3 · 帖子 2<br>更新于 2026-11-14</p>
+    <p class="rail-meta">栏目 3 · 页面 4 · 帖子 2<br>更新于 2026-11-14</p>
   </aside>
 
   <main class="win home">
@@ -299,18 +299,48 @@
           <span class="tile-name">展开器</span>
           <span class="tile-desc">记法工具导航</span>
         </a>
+
+        <a class="tile" href="definitions/">
+          <svg class="tile-ico" viewBox="0 0 52 52" aria-hidden="true">
+            <defs>
+              <linearGradient id="ic-ledger" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#ffffff"/>
+                <stop offset=".55" stop-color="#eef7fd"/>
+                <stop offset="1" stop-color="#cfe4f3"/>
+              </linearGradient>
+              <linearGradient id="ic-ledger-ink" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#5a98c2"/>
+                <stop offset="1" stop-color="#235c80"/>
+              </linearGradient>
+            </defs>
+            <rect x="13.5" y="6.5" width="25" height="39" rx="2.2" fill="url(#ic-ledger)" stroke="#6f9dbb" stroke-width="1.3"/>
+            <rect x="13.5" y="6.5" width="5" height="39" rx="2.2" fill="#d9e9f5" stroke="#6f9dbb" stroke-width="1.1"/>
+            <rect x="23" y="14" width="12" height="9" rx="1" fill="#ffffff" stroke="#9dbfd6" stroke-width="1"/>
+            <g fill="url(#ic-ledger-ink)">
+              <rect x="23" y="27" width="12" height="1.8" rx=".9"/>
+              <rect x="23" y="32" width="12" height="1.8" rx=".9"/>
+              <rect x="23" y="37" width="8" height="1.8" rx=".9"/>
+            </g>
+          </svg>
+          <span class="tile-name">定义</span>
+          <span class="tile-desc">术语与特殊定义</span>
+        </a>
       </nav>
     </div>
 
     <div class="statusbar">
       <span>首页</span>
-      <span>2 个栏目</span>
+      <span>3 个栏目</span>
     </div>
   </main>
 
   <aside class="rail rail-right" aria-labelledby="messages-title">
     <h2 id="messages-title">消息</h2>
     <ul class="msg-list">
+      <li class="msg-item">
+        <span class="msg-date">2026-11-14</span>
+        <span class="msg-text">新增「定义」栏目，收录术语与特殊定义。</span>
+      </li>
       <li class="msg-item">
         <span class="msg-date">2026-11-14</span>
         <span class="msg-text">博客栏目接入 MathJax，帖内可使用 LaTeX 公式。</span>
@@ -325,7 +355,7 @@
       </li>
     </ul>
     <p class="msg-empty">暂无更早记录。</p>
-    <p class="rail-meta">3 条消息<br>起于 2026-11-14</p>
+    <p class="rail-meta">4 条消息<br>起于 2026-11-14</p>
   </aside>
 </body>
 </html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>定义 — Googology Pages</title>
+<meta name="description" content="本站使用的术语与特殊定义，词条由帖子生成器维护。">
+<link rel="stylesheet" href="../assets/win7.css">
+<style>
+  .defs-win { width: 720px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .pane-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: 0 0 auto;
+    padding: 9px 14px 7px;
+    background: #fff;
+    border-bottom: 1px solid #dfeaf3;
+  }
+
+  .pane-head h2 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1b4a6b;
+    text-shadow: 0 1px 0 #fff;
+  }
+
+  .pane-count { font-size: 11px; color: #6d8aa0; }
+
+  .pane-note {
+    margin: 0;
+    padding: 8px 14px 9px;
+    font-size: 11px;
+    line-height: 1.7;
+    color: #6c8aa0;
+    background: #fff;
+    border-bottom: 1px solid #e8f0f6;
+  }
+
+  .filter {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 0 0 auto;
+    padding: 7px 14px 8px;
+    background: linear-gradient(180deg, #fbfdff 0%, #f0f7fd 100%);
+    border-bottom: 1px solid #dfeaf3;
+  }
+
+  .filter label { font-size: 11px; color: #4c6d85; }
+
+  .filter input {
+    flex: 1 1 auto;
+    height: 22px;
+    padding: 0 7px;
+    font: inherit;
+    font-size: 11px;
+    color: #23465f;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .12);
+  }
+
+  .filter input:focus-visible { outline: 2px solid #8dc4e9; outline-offset: -1px; }
+
+  .defs {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    background: #fff;
+  }
+
+  .group-title {
+    margin: 0;
+    padding: 11px 14px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .4px;
+    color: #587a93;
+    border-bottom: 1px solid #eef4f9;
+  }
+
+  .def { padding: 10px 14px 11px; border-bottom: 1px solid #e8f0f6; }
+
+  .def-head {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    margin: 0 0 4px;
+  }
+
+  .term {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a4767;
+  }
+
+  .alias { font-size: 11px; color: #6b879c; }
+
+  .def-body {
+    margin: 0 0 4px;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #2c4f68;
+  }
+
+  .def-foot { margin: 0; display: flex; gap: 4px; flex-wrap: wrap; }
+
+  .tag {
+    padding: 0 4px;
+    font-size: 10px;
+    color: #2f5f83;
+    background: linear-gradient(180deg, #f4fbff 0%, #dceefb 100%);
+    border: 1px solid #b9d6ea;
+    border-radius: 2px;
+  }
+
+  .empty {
+    margin: 0;
+    padding: 22px 14px;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #5b7a90;
+  }
+
+  .empty.error { color: #8a3a33; }
+
+  .defs mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  startup: { typeset: false },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win defs-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">定义 — Googology Pages</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>首页</a>
+      <div class="addressbar">
+        <span>googology</span>
+        <span class="sep">›</span>
+        <span class="cur">definitions</span>
+      </div>
+    </div>
+
+    <div class="pane-head">
+      <h2>定义库</h2>
+      <span class="pane-count" id="count"></span>
+    </div>
+
+    <p class="pane-note">收录本站使用的术语与特殊定义。词条存于 definitions.json，由帖子生成器维护；数字与公式依 MathJax 排版。</p>
+
+    <div class="filter">
+      <label for="q">筛选</label>
+      <input id="q" type="search" placeholder="输入术语、别名或正文中的词" autocomplete="off">
+    </div>
+
+    <div class="defs" id="defs">
+      <p class="empty">正在读取定义库…</p>
+    </div>
+
+    <div class="statusbar">
+      <span id="status">正在读取定义库…</span>
+      <span>definitions/definitions.json</span>
+    </div>
+  </main>
+
+<script>
+(function () {
+  'use strict';
+
+  var GROUP_ORDER = ['基础概念', '记法', '函数'];
+
+  var listEl = document.getElementById('defs');
+  var statusEl = document.getElementById('status');
+  var countEl = document.getElementById('count');
+  var input = document.getElementById('q');
+  var noHit = null;
+
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  }
+
+  function typeset() {
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise().catch(function () {});
+    } else {
+      setTimeout(typeset, 300);
+    }
+  }
+
+  function clear() {
+    while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
+  }
+
+  function entryOf(item) {
+    var term = String(item.term || '').trim();
+    if (!term) return null;
+    return {
+      term: term,
+      alias: String(item.alias || '').trim(),
+      group: String(item.group || '').trim() || '其它',
+      body: String(item.body || '').trim(),
+      tags: Array.isArray(item.tags) ? item.tags.filter(Boolean).map(String) : []
+    };
+  }
+
+  function groupOrder(names) {
+    var ordered = GROUP_ORDER.filter(function (g) { return names.indexOf(g) !== -1; });
+    names.forEach(function (g) {
+      if (ordered.indexOf(g) === -1) ordered.push(g);
+    });
+    return ordered;
+  }
+
+  function render(items) {
+    clear();
+    var entries = [];
+    items.forEach(function (item) {
+      var entry = entryOf(item);
+      if (entry) entries.push(entry);
+    });
+
+    if (!entries.length) {
+      listEl.appendChild(el('p', 'empty', '定义库为空。使用帖子生成器添加词条后，此处会按分组列出。'));
+      statusEl.textContent = '定义库为空';
+      countEl.textContent = '0 条';
+      return;
+    }
+
+    var names = [];
+    entries.forEach(function (e) {
+      if (names.indexOf(e.group) === -1) names.push(e.group);
+    });
+
+    groupOrder(names).forEach(function (group) {
+      listEl.appendChild(el('h3', 'group-title', group));
+
+      entries.filter(function (e) { return e.group === group; }).forEach(function (e) {
+        var article = el('article', 'def');
+
+        var head = el('div', 'def-head');
+        head.appendChild(el('h4', 'term', e.term));
+        if (e.alias) head.appendChild(el('span', 'alias', e.alias));
+        article.appendChild(head);
+
+        var blocks = e.body ? e.body.split(/\n\s*\n/) : [];
+        blocks.forEach(function (block) {
+          var text = block.trim();
+          if (text) article.appendChild(el('p', 'def-body', text));
+        });
+
+        if (e.tags.length) {
+          var foot = el('p', 'def-foot');
+          e.tags.forEach(function (tag) { foot.appendChild(el('span', 'tag', tag)); });
+          article.appendChild(foot);
+        }
+
+        listEl.appendChild(article);
+      });
+    });
+
+    noHit = el('p', 'empty', '没有匹配的词条。');
+    noHit.hidden = true;
+    listEl.appendChild(noHit);
+
+    countEl.textContent = entries.length + ' 条';
+    statusEl.textContent = '共 ' + entries.length + ' 条定义';
+    bindFilter(entries.length);
+    typeset();
+  }
+
+  function bindFilter(total) {
+    function apply() {
+      var q = input.value.trim().toLowerCase();
+      var shown = 0;
+
+      Array.prototype.forEach.call(listEl.querySelectorAll('.def'), function (item) {
+        var hit = !q || item.textContent.toLowerCase().indexOf(q) !== -1;
+        item.hidden = !hit;
+        if (hit) shown++;
+      });
+
+      Array.prototype.forEach.call(listEl.querySelectorAll('.group-title'), function (title) {
+        var next = title.nextElementSibling;
+        var any = false;
+        while (next && !next.classList.contains('group-title') && next !== noHit) {
+          if (next.classList.contains('def') && !next.hidden) { any = true; break; }
+          next = next.nextElementSibling;
+        }
+        title.hidden = !any;
+      });
+
+      if (noHit) noHit.hidden = shown > 0;
+      countEl.textContent = shown + ' / ' + total + ' 条';
+      statusEl.textContent = q
+        ? '筛选“' + input.value.trim() + '”：' + shown + ' 条'
+        : '共 ' + total + ' 条定义';
+    }
+
+    input.addEventListener('input', apply);
+    apply();
+  }
+
+  function fail(message) {
+    clear();
+    listEl.appendChild(el('p', 'empty error', message));
+    statusEl.textContent = '定义库读取失败。';
+    countEl.textContent = '';
+  }
+
+  if (location.protocol === 'file:') {
+    fail('本页通过 HTTP 读取 definitions.json，以本地文件方式打开无法加载。请经 HTTP 服务访问（例如 python -m http.server）。');
+    return;
+  }
+
+  fetch('./definitions.json', { cache: 'no-store' }).then(function (res) {
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }).then(function (data) {
+    var list = Array.isArray(data) ? data
+             : (data && Array.isArray(data.definitions) ? data.definitions : []);
+    render(list);
+  }).catch(function (err) {
+    fail('读取 definitions.json 失败（' + err.message + '）。');
+  });
+}());
+</script>
+</body>
+</html>
