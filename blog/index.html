@@ -163,11 +163,11 @@
     </div>
 
     <div class="posts" id="posts">
-      <p class="empty">正在读取 posts.json…</p>
+      <p class="empty">正在读取帖子清单…</p>
     </div>
 
     <div class="statusbar">
-      <span id="status">正在读取 posts.json…</span>
+      <span id="status">正在读取帖子清单…</span>
       <span>blog/posts.json</span>
     </div>
   </main>
@@ -218,7 +218,7 @@
     return {
       id: id,
       href: './postsfiles/' + id + '.html',
-      title: String(item.title || '').trim() || '无标题',
+      title: String(item.title || '').trim() || '未命名',
       date: String(item.date || '').trim(),
       summary: String(item.summary || '').trim(),
       tags: Array.isArray(item.tags) ? item.tags.filter(Boolean).map(String) : []
@@ -241,8 +241,8 @@
     listEl.textContent = '';
 
     if (!posts.length) {
-      listEl.appendChild(el('p', 'empty', '还没有帖子。'));
-      statusEl.textContent = '没有找到帖子。';
+      listEl.appendChild(el('p', 'empty', '暂无帖子。'));
+      statusEl.textContent = '当前没有帖子。';
       countEl.textContent = '';
       return;
     }
@@ -270,19 +270,19 @@
       listEl.appendChild(row);
     });
 
-    countEl.textContent = posts.length + ' 篇';
-    statusEl.textContent = posts.length + ' 篇帖子 · postsfiles/';
+    countEl.textContent = '共 ' + posts.length + ' 篇';
+    statusEl.textContent = '共 ' + posts.length + ' 篇 · postsfiles/';
   }
 
   function fail(message) {
     listEl.textContent = '';
     listEl.appendChild(el('p', 'empty error', message));
-    statusEl.textContent = '没能读入帖子。';
+    statusEl.textContent = '帖子清单读取失败。';
     countEl.textContent = '';
   }
 
   if (location.protocol === 'file:') {
-    fail('这个页面要用 HTTP 读取 posts.json 和 postsfiles/，直接双击打开不行。请通过服务器打开（例如 python -m http.server）。');
+    fail('本页通过 HTTP 读取 posts.json 与 postsfiles/ 目录，以本地文件方式打开无法加载。请经 HTTP 服务访问（例如 python -m http.server）。');
     return;
   }
 
@@ -299,7 +299,7 @@
         map.set(id, {
           id: id,
           href: './postsfiles/' + id + '.html',
-          title: '无标题',
+          title: '未命名',
           date: '',
           summary: '',
           tags: []
@@ -309,7 +309,7 @@
 
     render(Array.from(map.values()).sort(sortPosts));
   }).catch(function (err) {
-    fail('读取 posts.json 失败（' + err.message + '）。');
+    fail('读取帖子清单失败（' + err.message + '）。');
   });
 }());</script>
 </body>

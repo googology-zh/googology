@@ -124,23 +124,23 @@ window.MathJax = {
       <h1>LaTeX 测试</h1>
       <p class="meta">2026-11-14 · 编号 00000002</p>
 
-      <p>这篇帖子用来验证公式排版。行内公式写在两个美元号之间，比如 $2^{64}-1=18\,446\,744\,073\,709\,551\,615$，或者 $\frac{1}{3}+\frac{1}{6}=\frac{1}{2}$。独立成行的公式用两对美元号，居中单独占一行。</p>
+      <p>本文用于检验页面内的公式排版。行内公式以一对美元号标记，独立公式以两对美元号标记并单独成行，例如 $2^{64}-1=18\,446\,744\,073\,709\,551\,615$ 与 $\frac{1}{3}+\frac{1}{6}=\frac{1}{2}$。</p>
 
-      <p>先看一个收敛的例子，数列 $(1+\frac{1}{n})^n$ 的极限是自然常数 $e$：</p>
+      <p>以收敛数列为例，数列 $\left(1+\frac{1}{n}\right)^n$ 的极限为自然常数 $e$：</p>
 
       $$\left(1+\frac{1}{n}\right)^n \longrightarrow e \qquad (n \to \infty)$$
 
-      <p>再把 Knuth 的上箭头搬出来。一个箭头是普通的乘方，两个箭头是塔，三个箭头就已经没法写成指数了：$3\uparrow\uparrow 3 = 3^{3^3} = 7\,625\,597\,484\,987$。五个二叠成塔时，层数刚好是上一个结果：</p>
+      <p>Knuth 上箭头记法中，单个箭头表示乘方，双重箭头表示幂塔，三重箭头及以上已无法用指数形式书写：$3\uparrow\uparrow 3 = 3^{3^3} = 7\,625\,597\,484\,987$。幂塔每增加一层，指数即为下一层的结果：</p>
 
       $$2\uparrow\uparrow 5 = 2^{2\uparrow\uparrow 4} = 2^{65536} \approx 2.0\times 10^{19728}$$
 
-      <p>Graham 数按同一套箭头定义，只是箭头个数自己也在长大。写成式子是这样：$g_1 = 3\uparrow\uparrow\uparrow\uparrow 3$，然后 $g_{n+1} = 3\uparrow^{g_n} 3$，最后 $G = g_{64}$。用 <code>aligned</code> 可以把推导排成对齐的多行：</p>
+      <p>Graham 数沿用同一记法，其中箭头的数量本身亦随层级增长：$g_1 = 3\uparrow\uparrow\uparrow\uparrow 3$，$g_{n+1} = 3\uparrow^{g_n} 3$，$G = g_{64}$。推导过程可借 <code>aligned</code> 环境分列对齐：</p>
 
       $$\begin{aligned} 3\uparrow\uparrow 3 &= 3^{3^3} \\ &= 3^{27} \\ &= 7\,625\,597\,484\,987 \end{aligned}$$
 
-      <p>数学环境里也能放文字、箭头和定界符：$\lceil \log_{10} n \rceil$、$x \geqslant 0$、$\displaystyle\sum_{k=1}^{n} k = \frac{n(n+1)}{2}$。</p>
+      <p>数学环境亦支持关系符号、定界符与求和：$\lceil \log_{10} n \rceil$、$x \geqslant 0$、$\displaystyle\sum_{k=1}^{n} k = \frac{n(n+1)}{2}$。</p>
 
-      <p>页面上的公式由 MathJax 在浏览器里现排，脚本从 jsDelivr 上取；断网打开时会看到原始的 LaTeX 源码，这属于预期行为。</p>
+      <p>页内公式由 MathJax 在浏览器端实时排版，脚本自 jsDelivr 加载。离线访问时页面将显示 LaTeX 源码，属预期行为。</p>
     </article>
 
     <div class="statusbar">
