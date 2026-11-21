@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态规划（四）：状压、轮廓线与插头 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article table {
+    width: 100%;
+    margin: 0 0 14px;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .article th, .article td {
+    padding: 5px 8px;
+    text-align: left;
+    vertical-align: top;
+    border: 1px solid #dbe8f2;
+  }
+
+  .article th {
+    font-weight: 600;
+    color: #1b4a6b;
+    background: #f1f8fd;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 动态规划（四）</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000007.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>动态规划（四）：状压、轮廓线与插头</h1>
+      <p class="meta">2026-11-21 · 编号 00000007</p>
+
+      <p>棋盘上的计数与最优性问题，状态往往是一张小集合。集合压进整数就是状压；集合信息只落在一条界线上时，只需要记住那条界线，这就是轮廓线；界线上的元素还要区分"谁和谁连着"，就是插头 DP。三者是同一件事的三层细化。</p>
+
+      <h2>一、什么时候可以状压</h2>
+
+      <p>两个条件：需要记住的集合规模可以枚举，一般不超过 $2^{20}$，实际题目多在 $2^{16}$ 以内；转移只依赖集合本身的局部信息，不依赖元素的排列或其他属性。前者决定内存，后者决定正确性。只要转移里出现"上一次选取的顺序"，这个压法就不成立，得把顺序也编码进去。</p>
+
+      <p>常见形式有三种：每行一个掩码，行内做合法性预处理（炮兵阵地、玉米田）；按位枚举子集，用 $3^n$ 表示"不选、选、被覆盖"三种状态；集合加当前点，即 TSP 的 $f_{S,i}$。第三种的状态数要乘上 $n$，估复杂度时别漏。</p>
+
+      <h2>二、轮廓线：把行枚举改成格枚举</h2>
+
+      <p>按行枚举时，一行有 $2^m$ 种状态，行内转移还要再枚举一次，代码通常写成两个掩码之间的匹配，长度一大就难写。轮廓线 DP 换一个视角：逐格决策，状态只记"已决策区域与未决策区域交界线"上的信息。界线长度仍是 $m$，信息量仍是 $2^m$，但转移变成每格 $O(1)$ 次，代码统一，也便于推广到连通性问题。</p>
+
+      <p>以 $n\times m$ 棋盘用 $1\times2$ 骨牌完全覆盖为例。状态 <code>S</code> 的第 $c$ 位表示"第 $c$ 列已被上一行竖放的骨牌占用"。</p>
+
+      <pre><code>int n, m;
+long long f[1 &lt;&lt; 12], g[1 &lt;&lt; 12];
+
+// col: 当前列; S: 本行被上一行占用的列; nS: 下一行将被占用的列
+void dfs(int col, int S, int nS, long long val, bool canDown) {
+    if (col == m) { g[nS] += val; return; }
+    if (S &gt;&gt; col &amp; 1) { dfs(col + 1, S, nS, val, canDown); return; }
+    if (canDown)                                  // 竖放
+        dfs(col + 1, S, nS | (1 &lt;&lt; col), val, canDown);
+    if (col + 1 &lt; m &amp;&amp; !(S &gt;&gt; (col + 1) &amp; 1))   // 横放
+        dfs(col + 2, S, nS, val, canDown);
+}</code></pre>
+
+      <p>外层按行推进：</p>
+
+      <pre><code>f[0] = 1;
+for (int i = 0; i &lt; n; ++i) {
+    std::fill(g, g + (1 &lt; m), 0);
+    for (int S = 0; S &lt; (1 &lt; m); ++S)
+        if (f[S]) dfs(0, S, 0, f[S], i + 1 &lt; n);
+    std::copy(g, g + (1 &lt; m), f);
+}
+// 答案在 f[0]：最后一行处理完后不能再有向下占用</code></pre>
+
+      <p><code>canDown</code> 就是最后一行不能竖放这一条约束。少了它，程序会把骨牌铺到棋盘外，答案偏大，而这种错误在小数据上不一定暴露。</p>
+
+      <h2>三、插头：连通性怎么记</h2>
+
+      <p>回路、路径类问题里，状态不只是"格子是否被占"，还要知道"占用的格子属于哪个连通块"。界线上的每条边若与已决策区域相连，称为一个插头。一个连通块在界线上最多有两个插头（进入端与离开端），于是可以用括号序列表示：进入端记左括号，离开端记右括号。每位两个二进制位，0 表示无插头，1 表示左括号，2 表示右括号。</p>
+
+      <p>若一条路径可以多次经过同一连通块，括号表示就不够用了，需要最小表示法：把每个连通块在界线上的插头统一编号为当前最小编号，把同构状态消去。单回路问题用括号表示即可，多回路问题必须换最小表示。</p>
+
+      <h2>四、四种转移</h2>
+
+      <p>设格子 $(i,j)$ 处左插头为 $p$（界线第 $j$ 位）、上插头为 $q$（第 $j+1$ 位）。</p>
+
+      <table>
+        <tr><th>情形</th><th>含义</th><th>操作</th></tr>
+        <tr><td>$p=q=0$</td><td>新建连通块</td><td>右插头记 <code>1</code>、下插头记 <code>2</code>，要求右侧与下方都有格子</td></tr>
+        <tr><td>$p\ne0,\ q=0$</td><td>插头延伸</td><td>向右或向下走，编码不变</td></tr>
+        <tr><td>$p=0,\ q\ne0$</td><td>插头延伸</td><td>向右或向下走，编码不变</td></tr>
+        <tr><td>$p=q=1$</td><td>两个左括号相遇</td><td>把 $q$ 匹配的右括号改成左括号</td></tr>
+        <tr><td>$p=q=2$</td><td>两个右括号相遇</td><td>把 $p$ 匹配的左括号改成右括号</td></tr>
+        <tr><td>$p=2,\ q=1$</td><td>出口接入口</td><td>两个插头同时消去，其余不动</td></tr>
+        <tr><td>$p=1,\ q=2$</td><td>闭合回路</td><td>仅在最后一格且界线已空时合法</td></tr>
+      </table>
+
+      <p>完整实现如下。状态用哈希表滚动，网格无障碍，统计单回路条数。</p>
+
+      <pre><code>int get(int S, int p) { return (S &gt;&gt; (p &lt;&lt; 1)) &amp; 3; }
+
+void setp(int &amp;S, int p, int v) {
+    S = (S &amp; ~(3 &lt;&lt; (p &lt;&lt; 1))) | (v &lt;&lt; (p &lt;&lt; 1));
+}
+
+void run(int i, int j, int S, long long val) {
+    int p = get(S, j), q = get(S, j + 1);
+
+    if (p == 0 &amp;&amp; q == 0) {
+        if (i + 1 &lt; n &amp;&amp; j + 1 &lt; m) {
+            int T = S; setp(T, j, 1); setp(T, j + 1, 2);
+            g[T] += val;
+        }
+        return;
+    }
+
+    if (p &amp;&amp; !q) {
+        if (j + 1 &lt; m) { int T = S; setp(T, j, 0); setp(T, j + 1, p); g[T] += val; }
+        if (i + 1 &lt; n) { g[S] += val; }     // 向下，插头留在第 j 位
+        return;
+    }
+
+    if (!p &amp;&amp; q) {
+        if (j + 1 &lt; m) { g[S] += val; }     // 向右，插头留在第 j+1 位
+        if (i + 1 &lt; n) { int T = S; setp(T, j, q); setp(T, j + 1, 0); g[T] += val; }
+        return;
+    }
+
+    int T = S; setp(T, j, 0); setp(T, j + 1, 0);
+
+    if (p == 1 &amp;&amp; q == 1) {
+        int bal = 1;
+        for (int t = j + 2; t &lt;= m; ++t) {
+            int v = get(S, t);
+            if (v == 1) ++bal;
+            else if (v == 2 &amp;&amp; --bal == 0) { setp(T, t, 1); break; }
+        }
+        g[T] += val;
+    } else if (p == 2 &amp;&amp; q == 2) {
+        int bal = 1;
+        for (int t = j - 1; t &gt;= 0; --t) {
+            int v = get(S, t);
+            if (v == 2) ++bal;
+            else if (v == 1 &amp;&amp; --bal == 0) { setp(T, t, 2); break; }
+        }
+        g[T] += val;
+    } else if (p == 2 &amp;&amp; q == 1) {
+        g[T] += val;
+    } else {                                // p == 1 &amp;&amp; q == 2
+        if (i == n - 1 &amp;&amp; j == m - 1 &amp;&amp; T == 0) g[0] += val;
+    }
+}</code></pre>
+
+      <p>主循环按格推进，行末左移两位，让上一行的向下插头移到下一行的上方位置：</p>
+
+      <pre><code>std::unordered_map&lt;int, long long&gt; f, g;
+f[0] = 1;
+for (int i = 0; i &lt; n; ++i) {
+    for (int j = 0; j &lt; m; ++j) {
+        g.clear();
+        for (auto &amp;kv : f) run(i, j, kv.first, kv.second);
+        f.swap(g);
+    }
+    std::unordered_map&lt;int, long long&gt; h;
+    for (auto &amp;kv : f)
+        if (get(kv.first, m) == 0) h[kv.first &lt;&lt; 2] += kv.second;
+    f.swap(h);
+}
+// 答案为 f[0]</code></pre>
+
+      <p>行末那一步必须先检查第 $m$ 位为空，否则左移会把越界的插头带进下一行的第 $0$ 位，状态的含义就乱了。<code>i</code>、<code>j</code> 的类型是 <code>int</code>，<code>(p &lt;&lt; 1)</code> 即 <code>p * 2</code>，别写成移位以外的花样。</p>
+
+      <h2>五、复杂度与常见坑</h2>
+
+      <ul>
+        <li>状态数上界 $4^{m+1}$，实际远小于此，$m\le 12$ 时通常只有几千到几万。$m$ 超过 14 基本不可做。</li>
+        <li>闭合回路的判定要严：<code>T == 0</code> 与最后一格两个条件缺一不可，否则会把多条回路拼成一条，或把断开的路径当成回路。</li>
+        <li>网格有障碍时，障碍格上不允许任何插头通过，且 $p,q$ 必须同时为 0；转移前先判这一条。</li>
+        <li>手写开放寻址散列比 <code>std::unordered_map</code> 稳，后者在状态数上万时 rehash 的常数很难估。真要省事，先用 <code>unordered_map</code> 写对，再换实现。</li>
+        <li>方案数用 <code>long long</code>，取模的题按题意取；滚动表的清空只清有效位，不要每次 <code>memset</code> 整个 $4^{m+1}$ 大小的数组。</li>
+      </ul>
+
+      <p>建议的练习顺序：先写骨牌覆盖，把轮廓线的移位和行末处理弄熟；再把状态换成三进制括号，写单回路；最后加障碍、加多条路径。每一步都用小规模暴力对拍，插头 DP 的错误几乎都藏在转移的那几种情况里。</p>
+
+      <p>数位、树形、期望方程与矩阵递推这几种展开方式，见第五篇。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 动态规划（四）</span>
+      <span>00000007.html</span>
+    </div>
+  </main>
+</body>
+</html>

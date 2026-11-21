@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态规划专题：CDQ 分治与原地 1D/1D — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 动态规划专题</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000000f.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>动态规划专题：CDQ 分治与原地 1D/1D</h1>
+      <p class="meta">2026-11-21 · 编号 0000000f</p>
+
+      <p>第二篇讲的分治优化，前提是"上一层已经整层算完"。当转移在同一条数组里原地进行、$f_i$ 依赖 $f_j\ (j&lt;i)$ 时，算 $mid$ 之前左半段还没有值，普通分治就失效了。解决方式是调换递归与转移的次序，也就是 CDQ 分治。</p>
+
+      <h2>一、问题与失败的原因</h2>
+
+      <p>形式仍是</p>
+
+      $$f_i=\min_{0\le j&lt;i}\left(f_j+w(j,i)\right)$$
+
+      <p>$w$ 满足四边形不等式，$opt_i$ 单调不减，$f_0=0$。若照搬第二篇的写法，进入函数就先算 $f_{mid}$，此时 $f_l,\dots,f_{mid-1}$ 全是初值，算出来的是错的，而且这个错误会随着递归传播下去。</p>
+
+      <p>正确的做法是把"算左半"提前：先递归左半，让 $f_{l..mid}$ 全部定型，再用这一段去更新右半，最后递归右半。这样每对 $(j,i)$ 恰好在"两者第一次被分到不同半边"的那个节点上被检查一次，不重不漏。</p>
+
+      <h2>二、分治转移</h2>
+
+      <p>在节点 $[l,r]$ 上，左半 $[l,mid]$ 已定型，右半 $[mid+1,r]$ 的候选决策点只可能来自 $[l,mid]$；来自更小下标的贡献已经由祖先节点算过，存在 $f_i$ 里。由于 $opt$ 单调，右半的决策点也随 $i$ 单调，用一个不回退的指针扫描即可，单个节点的代价与区间长度成正比。</p>
+
+      <pre><code>const long long INF = (long long)4e18;
+long long f[MAXN];
+
+void solve(int l, int r) {
+    if (l == r) return;
+    int mid = (l + r) &gt;&gt; 1;
+    solve(l, mid);                       // 先让左半定型
+    int p = l;
+    for (int i = mid + 1; i &lt;= r; ++i) {
+        while (p &lt; mid &amp;&amp; f[p + 1] + w(p + 1, i) &lt;= f[p] + w(p, i)) ++p;
+        f[i] = std::min(f[i], f[p] + w(p, i));
+    }
+    solve(mid + 1, r);
+}
+
+// 调用：f[0] = 0，其余为 INF，solve(0, n)</code></pre>
+
+      <p>复杂度：每一层的区间长度之和是 $O(n)$，层数 $O(\log n)$，$w$ 的求值次数 $O(n\log n)$。这个界依赖两个条件：$w$ 必须 $O(1)$ 可算；指针的范围必须限制在 $[l,mid]$。写成全区间扫描，单节点代价回到 $O(n)$，总复杂度退化成 $O(n^2)$，与暴力没有区别。</p>
+
+      <p>等号的取舍要固定。上面的 <code>&lt;=</code> 让指针尽量右移，等价于"值相同时取较大的决策点"。若要求取较小决策点，改成 <code>&lt;</code>，两种写法各自都能保持单调，混用则可能在同一层内来回移动。</p>
+
+      <h2>三、正确性补一句</h2>
+
+      <p>归纳来看：节点 $[l,r]$ 进入时，$f_{l..r}$ 已包含所有 $j&lt;l$ 的转移（由祖先完成）；递归左半后，$f_{l..mid}$ 又补上了 $[l,mid-1]$ 内部的转移，于是它完整；随后右半只缺 $[l,mid]$ 这些决策点，扫描把它们补上；最后递归右半，重复同样的论证。递归到叶子时，$f_i$ 已经收到全部 $j&lt;i$ 的贡献。</p>
+
+      <p>这套论证同时说明了为什么"先递归、后转移"不能随便交换：交换之后就变成第二篇的按层形式，只适合 $f$ 依赖另一条数组的情形。</p>
+
+      <h2>四、与在线决策单调的关系</h2>
+
+      <p>同一问题还有另一种做法：从左到右依次确定 $f_i$，同时维护每个决策点"成为最优"的阶段区间，新决策点用二分找出它取代旧决策点的位置。每次操作 $O(\log n)$，总 $O(n\log n)$，空间 $O(n)$。它适合一维情形，但状态换成二维、转移来源不止一条数组时，写起来比 CDQ 麻烦得多。</p>
+
+      <p>CDQ 的代价是常数：每个节点都要重新从 $l$ 起指针，虽然均摊线性，实际运行比单调队列慢数倍。$n\le 10^6$ 时这个常数值得在意，能用单调队列的场合不要用 CDQ。</p>
+
+      <h2>五、适用面与坑</h2>
+
+      <ul>
+        <li>转移代价 $w(j,i)$ 需要 $O(1)$ 求值。若它依赖莫队式的区间增删，$w$ 的单次代价乘进 $O(n\log n)$，通常就不划算了。</li>
+        <li>$f$ 的初值只能是基底（$f_0$）与正无穷，其余要靠递归补齐；若提前给某些 $f_i$ 赋了估计值，扫描时会把这些值当成合法决策，结果偏小且难以察觉。</li>
+        <li>二维情形：$f_{i,j}$ 依赖 $f_{i',j'}$ 且 $i'&lt;i$ 时，把第一维做 CDQ、第二维在节点内做一遍转移，复杂度多一个 $O(\log)$ 或 $O(n)$ 的因子，要按数据范围重新估。</li>
+        <li>取模的最优值问题不要用这套做法：单调性建立在实数序上，取模之后序被破坏，决策单调不再成立。</li>
+      </ul>
+
+      <p>验证办法仍是老一套：写一份 $O(n^2)$ 的暴力，随机小数据对拍；再检查 $opt$ 是否单调。CDQ 的代码短，出错几乎都在指针边界与等号方向上，对拍几组就能定位。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 动态规划专题</span>
+      <span>0000000f.html</span>
+    </div>
+  </main>
+</body>
+</html>

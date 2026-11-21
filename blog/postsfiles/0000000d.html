@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态规划专题：AC 自动机、矩阵与计数 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 动态规划专题</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000000d.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>动态规划专题：AC 自动机、矩阵与计数</h1>
+      <p class="meta">2026-11-21 · 编号 0000000d</p>
+
+      <p>有一类计数题：给定若干净止串，问长度为 $n$ 的串中有多少个不包含其中任何一个。暴力枚举是 $|\Sigma|^n$，而在 AC 自动机上走一遍就是 $O(n\cdot\text{节点数}\cdot|\Sigma|)$；$n$ 再大，就只能把"走一步"写成矩阵，用快速幂把 $n$ 压进对数。</p>
+
+      <h2>一、AC 自动机要用的部分</h2>
+
+      <p>建 trie 时不需多言，关键是 BFS 求 <code>fail</code> 时顺手把转移补全：节点 $u$ 读字符 $c$ 若无出边，就直接指向 <code>ch[fail[u]][c]</code>。补全之后，从任意节点读任意字符都有确定的后继，状态转移才是一个完整的函数，才能写成矩阵。</p>
+
+      <p>另一个必须处理的量是"危险标记"。若某节点的 <code>fail</code> 链上存在终止节点，它本身也危险：从它继续读字符，等于已经出现了一个模式串的后缀。BFS 的顺序保证 <code>fail[u]</code> 先算完，所以只需一句 <code>bad[u] |= bad[fail[u]]</code>。</p>
+
+      <pre><code>struct AC {
+    int ch[MAXN][26], fail[MAXN], sz = 1;
+    bool bad[MAXN];
+
+    void insert(const std::string &amp;s) {
+        int u = 1;
+        for (char c : s) {
+            int x = c - 'a';
+            if (!ch[u][x]) ch[u][x] = ++sz;
+            u = ch[u][x];
+        }
+        bad[u] = true;
+    }
+
+    void build() {
+        std::queue&lt;int&gt; q;
+        fail[1] = 1;
+        for (int c = 0; c &lt; 26; ++c) {
+            int v = ch[1][c];
+            if (v) fail[v] = 1, q.push(v);
+            else ch[1][c] = 1;
+        }
+        while (!q.empty()) {
+            int u = q.front(); q.pop();
+            bad[u] |= bad[fail[u]];
+            for (int c = 0; c &lt; 26; ++c) {
+                int v = ch[u][c];
+                if (v) fail[v] = ch[fail[u]][c], q.push(v);
+                else ch[u][c] = ch[fail[u]][c];
+            }
+        }
+    }
+};</code></pre>
+
+      <p><code>fail[1] = 1</code> 而不是 0，省掉"跳到不存在的 0 号节点"的判断；相应地所有节点编号从 1 起。有人把根记作 0 并让 <code>fail[0]=0</code>，两种写法都对，混用就会出错。</p>
+
+      <h2>二、长度小：直接 DP</h2>
+
+      <p>设 $f_{i,u}$ 为长度 $i$、停在节点 $u$ 且未出现任何模式的串数，初值 $f_{0,1}=1$。转移枚举字符，跳过危险节点：</p>
+
+      $$f_{i+1,\;ch[u][c]} \mathrel{+}= f_{i,u},\qquad \text{若 } ch[u][c] \text{ 不危险}$$
+
+      <p>复杂度 $O(n\cdot sz\cdot|\Sigma|)$，$sz$ 为 trie 节点数。这一版适合 $n\le 10^5$、$sz\le 100$ 的题，常数小，也不涉及矩阵。</p>
+
+      <h2>三、长度大：转移矩阵</h2>
+
+      <p>把 $sz$ 个状态排成一列，矩阵 $M$ 的 $(u,v)$ 元定义为"从 $u$ 读一个字符走到 $v$ 的字符个数"，只统计两端都安全的转移。则 $M^n$ 的 $(1,v)$ 元就是从根走 $n$ 步到 $v$ 的方案数，答案是对 $v$ 求和。</p>
+
+      <pre><code>const int SZ = 105;   // 大于 trie 节点数
+
+struct Mat {
+    long long a[SZ][SZ];
+    Mat() { std::memset(a, 0, sizeof a); }
+};
+
+Mat mul(const Mat &amp;A, const Mat &amp;B, int n) {
+    Mat C;
+    for (int i = 1; i &lt;= n; ++i)
+        for (int k = 1; k &lt;= n; ++k) {
+            if (!A.a[i][k]) continue;
+            long long aik = A.a[i][k];
+            for (int j = 1; j &lt;= n; ++j)
+                C.a[i][j] = (C.a[i][j] + aik * B.a[k][j]) % MOD;
+        }
+    return C;
+}
+
+long long countStrings(long long len, int n) {
+    Mat base;
+    for (int u = 1; u &lt;= n; ++u) {
+        if (ac.bad[u]) continue;
+        for (int c = 0; c &lt; 26; ++c) {
+            int v = ac.ch[u][c];
+            if (!ac.bad[v]) ++base.a[u][v];
+        }
+    }
+    Mat res;                        // 单位矩阵
+    for (int i = 1; i &lt;= n; ++i) res.a[i][i] = 1;
+
+    for (; len; len &gt;&gt;= 1, base = mul(base, base, n))
+        if (len &amp; 1) res = mul(res, base, n);
+
+    long long sum = 0;
+    for (int v = 1; v &lt;= n; ++v) sum = (sum + res.a[1][v]) % MOD;
+    return sum;
+}</code></pre>
+
+      <p>三个细节：矩阵下标从 1 起，与节点编号对齐；<code>mul</code> 里按 $i,k,j$ 的顺序循环并在 <code>A.a[i][k]==0</code> 时跳过，比朴素的 $i,j,k$ 快数倍；<code>len=0</code> 时单位阵给出答案 1，正好对应空串。</p>
+
+      <p>复杂度 $O(sz^3\log n)$。$sz$ 超过 200 时这一版就不划算，得回到按长度递推，或者利用矩阵的稀疏性做向量乘矩阵（$O(n\cdot sz^2)$ 甚至 $O(n\cdot\text{边数})$）。</p>
+
+      <h2>四、几种常见变形</h2>
+
+      <ul>
+        <li>"至少出现一次"：总数 $26^n$ 减去一次都不出现的数量。减法在模意义下取正即可。</li>
+        <li>"长度不超过 $n$"：在矩阵外再加一个汇总状态，每步可以把当前答案累加进去，或者直接对 $M^0+\cdots+M^n$ 求和，用分块快速幂 $O(sz^3\log n)$。</li>
+        <li>模式串带权、要求总权值不超过 $K$：状态里再带一维权值，变成 $f_{i,u,k}$，不能再用矩阵。</li>
+        <li>多个文本串分别询问：一次建好 AC 自动机，每次从头跑，复杂度与文本总长成正比。</li>
+      </ul>
+
+      <h2>五、易错点</h2>
+
+      <p>最常见的是忘了把危险标记沿 <code>fail</code> 下传，导致"模式串的后缀恰好是另一个模式串"没有被识别。其次是补全转移与原始 trie 边混用：一旦补全，<code>ch[u][c]</code> 就不再全是"真实出边"，想枚举原始边必须单独存一份。</p>
+
+      <p>矩阵维数要按 trie 实际节点数取，不能按模式串总长估：多个模式串共享前缀时，节点数远小于总长，按总长开矩阵会白白多算几倍。最后，答案对根所在行求和之后别忘了取模，$sz$ 稍大时 <code>res.a[1][v]</code> 的累加很容易溢出 32 位。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 动态规划专题</span>
+      <span>0000000d.html</span>
+    </div>
+  </main>
+</body>
+</html>

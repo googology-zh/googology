@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>莫比乌斯反演与杜教筛 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 莫比乌斯反演与杜教筛</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000012.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>莫比乌斯反演与杜教筛</h1>
+      <p class="meta">2026-11-21 · 编号 00000012</p>
+
+      <p>数论题的计数对象常带一个 <code>gcd</code> 条件。把 <code>gcd</code> 拆成约束再求和，往往能化成"枚举约数 + 数论分块"，那是莫比乌斯反演；当 $n$ 大到 $10^{10}$ 时，连线性筛都做不了，就要用杜教筛把前缀和算出来。</p>
+
+      <h2>一、狄利克雷卷积</h2>
+
+      <p>对两个数论函数定义</p>
+
+      $$(f*g)(n)=\sum_{d\mid n}f(d)\,g\!\left(\frac{n}{d}\right)$$
+
+      <p>它满足交换律与结合律，单位元是 $\varepsilon(n)=[n=1]$。几个常用的恒等式：</p>
+
+      $$(\mu*1)(n)=\varepsilon(n),\qquad (\varphi*1)(n)=n,\qquad (\mu*\mathrm{id})(n)=\varphi(n)$$
+
+      <p>其中 $1(n)=1$、$\mathrm{id}(n)=n$。莫比乌斯函数 $\mu$ 就是 $1$ 在卷积意义下的逆，因此第一条恒等式等价于 $\sum_{d\mid n}\mu(d)=[n=1]$。</p>
+
+      <h2>二、反演的两种形式</h2>
+
+      <p>若 $g(n)=\sum_{d\mid n}f(d)$，则</p>
+
+      $$f(n)=\sum_{d\mid n}\mu\!\left(\frac{n}{d}\right)g(d)$$
+
+      <p>写成卷积就是 $g=f*1\Rightarrow f=g*\mu$。另一种形式的条件是 $g(n)=\sum_{n\mid d}f(d)$（对倍数求和），此时 $f(n)=\sum_{n\mid d}\mu\!\left(\frac{d}{n}\right)g(d)$。做题时先看清求和方向是"约数"还是"倍数"，两者不能混用。</p>
+
+      <p>最常见的用法是处理 $[\gcd(i,j)=1]$：</p>
+
+      $$[\gcd(i,j)=1]=\sum_{d\mid \gcd(i,j)}\mu(d)$$
+
+      <p>于是</p>
+
+      $$\sum_{i\le n}\sum_{j\le m}[\gcd(i,j)=1]=\sum_{d\le \min(n,m)}\mu(d)\left\lfloor\frac{n}{d}\right\rfloor\left\lfloor\frac{m}{d}\right\rfloor$$
+
+      <p>右侧只需枚举 $d$ 并做数论分块，$O(\sqrt n)$ 一轮；若多组询问且 $n$ 不大，预处理 $\mu$ 的前缀和即可 $O(\sqrt n)$ 回答每组。</p>
+
+      <h2>三、线性筛</h2>
+
+      <p>$\mu$ 的取值只有 $-1,0,1$：质数为 $-1$，含平方因子为 $0$，其余按质因子个数取符号。$\varphi$ 可一并筛出。</p>
+
+      <pre><code>int pri[MAXN], pcnt;
+bool vis[MAXN];
+int mu[MAXN], phi[MAXN];
+
+void sieve(int n) {
+    mu[1] = 1; phi[1] = 1;
+    for (int i = 2; i &lt;= n; ++i) {
+        if (!vis[i]) {
+            pri[++pcnt] = i;
+            mu[i] = -1;
+            phi[i] = i - 1;
+        }
+        for (int j = 1; j &lt;= pcnt &amp;&amp; i * pri[j] &lt;= n; ++j) {
+            int x = i * pri[j];
+            vis[x] = true;
+            if (i % pri[j] == 0) {
+                mu[x] = 0;
+                phi[x] = phi[i] * pri[j];
+                break;
+            }
+            mu[x] = -mu[i];
+            phi[x] = phi[i] * (pri[j] - 1);
+        }
+    }
+    for (int i = 1; i &lt;= n; ++i) mu[i] += mu[i - 1];   // 前缀和
+}</code></pre>
+
+      <p><code>mu</code> 的前缀和会出现负数与零，做容斥时不要想当然地当成长度。筛法的循环里 <code>i * pri[j]</code> 用 <code>int</code> 时，$n$ 接近 $10^9$ 会溢出，改 <code>long long</code> 或先判 <code>i &gt; n / pri[j]</code>。</p>
+
+      <h2>四、杜教筛</h2>
+
+      <p>求 $S(n)=\sum_{i\le n}f(i)$，$n$ 到 $10^{10}$，无法线性筛。取一个容易求前缀和的 $g$，令 $h=f*g$，则</p>
+
+      $$\sum_{i\le n}h(i)=\sum_{d\le n}g(d)\,S\!\left(\left\lfloor\frac{n}{d}\right\rfloor\right)$$
+
+      <p>把 $d=1$ 的那一项单独拿出来，得到递推</p>
+
+      $$S(n)=\sum_{i\le n}h(i)-\sum_{d=2}^{n}g(d)\,S\!\left(\left\lfloor\frac{n}{d}\right\rfloor\right)$$
+
+      <p>右侧的 $S(\lfloor n/d\rfloor)$ 只有 $O(\sqrt n)$ 种不同取值，按数论分块整段处理，配合记忆化，复杂度约为 $O(n^{3/4})$；预先线性筛出前 $n^{2/3}$ 项，可降到 $O(n^{2/3})$。</p>
+
+      <p>以 $\varphi$ 为例，取 $g=1$、$h=\mathrm{id}$，于是 $\sum_{i\le n}h(i)=\dfrac{n(n+1)}{2}$，$g(d)=1$ 让整段系数就是区间长度：</p>
+
+      <pre><code>std::unordered_map&lt;long long, long long&gt; memo;
+
+long long sumPhi(long long n) {
+    if (n &lt; MAXN) return phiPref[n];
+    auto it = memo.find(n);
+    if (it != memo.end()) return it-&gt;second;
+
+    long long res = n * (n + 1) / 2;          // sum of id
+    for (long long l = 2, r; l &lt;= n; l = r + 1) {
+        r = n / (n / l);                      // 同一段内 n/l 相同
+        res -= (r - l + 1) * sumPhi(n / l);   // g(d)=1
+    }
+    return memo[n] = res;
+}</code></pre>
+
+      <p>分块边界 <code>r = n / (n / l)</code> 是数论分块的核心式子，写成 <code>r = l + 1</code> 就退化成线性。$n$ 很大时 <code>n * (n + 1) / 2</code> 要用 <code>__int128</code> 或先除后乘，$10^{10}$ 量级已经超出 64 位有符号数的安全乘法范围。</p>
+
+      <h2>五、常见组合</h2>
+
+      <ul>
+        <li>$\sum_{i\le n}\sum_{j\le m}\gcd(i,j)$：用 $(\varphi*1)=\mathrm{id}$ 把 $d$ 提出来，化为 $\sum_d \varphi(d)\lfloor n/d\rfloor\lfloor m/d\rfloor$ 之外的变形，或用 $\mathrm{id}=\varphi*1$ 反演。</li>
+        <li>$\sum_{i\le n}\sum_{j\le m}[gcd(i,j)=k]$：把 $n,m$ 除以 $k$，回到互素情形。</li>
+        <li>多组询问、$n\le 10^7$：预处理 $\mu$ 与 $\varphi$ 的前缀和，每组 $O(\sqrt n)$。</li>
+        <li>$n\le 10^{10}$：杜教筛；若同时要 $\mu$ 与 $\varphi$，两者可以共用同一个记忆化表结构，但键值要分开。</li>
+      </ul>
+
+      <h2>六、易错点</h2>
+
+      <p>一是把 $[\gcd=1]$ 的展开方向搞反，得到 $\sum_{d\mid i,d\mid j}$ 却按 $\sum_{d\le n}$ 去分块。二是分块时边界取错，漏掉最后一个小区间。三是杜教筛的递归没有记忆化，复杂度直接爆掉；记忆化用 <code>unordered_map</code> 时，$n$ 的种类数是 $O(\sqrt n)$，规模可控，不必手写散列。四是模意义下做减法忘记取正，$\mu$ 前缀和为负时尤其容易。</p>
+
+      <p>验证方式：小范围与暴力对拍（枚举 $i,j$ 直接算 $\gcd$），杜教筛与线性筛的前缀和逐项对比到 $10^6$。两个都过了，再上大范围。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 莫比乌斯反演与杜教筛</span>
+      <span>00000012.html</span>
+    </div>
+  </main>
+</body>
+</html>

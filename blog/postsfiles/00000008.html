@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>后缀自动机：结构、性质与计数 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 后缀自动机</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000008.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>后缀自动机：结构、性质与计数</h1>
+      <p class="meta">2026-11-15 · 编号 00000008</p>
+
+      <p>后缀自动机（Suffix Automaton，下称 SAM）是识别一个串全部子串的最小确定有限自动机。它的状态数关于串长线性，支持在线构造，绝大多数子串统计类问题都能在 $O(n)$ 或 $O(n\log n)$ 内解决。它的构造是 OI 里少数几个必须背下来、又必须理解清楚为什么这样做的算法。</p>
+
+      <h2>一、状态的定义</h2>
+
+      <p>对串 $s$ 的每个位置 $i$，记 $endpos(i)$ 为子串 $s[i..n]$ 在 $s$ 中每次出现时的结束下标集合。两个子串的 $endpos$ 集合若相同，则它们互为后缀，长度构成一个连续的整数区间。SAM 的每个状态对应一个 $endpos$ 等价类。</p>
+
+      <p>状态上记三个量：<code>len</code> 为该类中最长串的长度，<code>link</code> 指向该类中最短串删去首字母后所属的类，转移表按字符集大小开。$root$ 的 <code>len</code> 为 0，<code>link</code> 为空。</p>
+
+      <p>两条基本性质：状态数不超过 $2n-1$，转移数不超过 $3n-4$（$n\ge3$）。所有状态按 <code>len</code> 排序后，<code>link</code> 指向的状态必定排在前面，因此按 <code>len</code> 的桶排序同时给出了后缀链接树的拓扑序。这条性质在统计答案时反复用到。</p>
+
+      <h2>二、在线构造</h2>
+
+      <p>逐字符加入。设当前串的末位置对应状态 <code>last</code>，加入字符 $c$：新建 <code>cur</code>，<code>len=len[last]+1</code>，沿 <code>link</code> 向上，把路径上所有缺少 $c$ 转移的状态补成指向 <code>cur</code>；若一路到根都缺，则 <code>link[cur]=root</code>。若中途遇到状态 $p$ 已有 $c$ 转移指向 $q$，分两种情况：$len[q]=len[p]+1$ 时直接令 <code>link[cur]=q</code>；否则克隆 $q$ 为 <code>clone</code>，<code>len[clone]=len[p]+1</code>，把 $q$ 与 <code>cur</code> 的 <code>link</code> 都指向 <code>clone</code>，并把 $p$ 向上所有指向 $q$ 的 $c$ 转移改指 <code>clone</code>。</p>
+
+      <pre><code>struct SAM {
+    int ch[MAXN][26], link[MAXN], len[MAXN], cnt[MAXN];
+    int sz, last;
+
+    SAM() { sz = 1; last = 1; link[1] = 0; len[1] = 0; }
+
+    void extend(int c) {
+        int cur = ++sz;
+        len[cur] = len[last] + 1;
+        cnt[cur] = 1;
+        int p = last;
+        while (p &amp;&amp; !ch[p][c]) { ch[p][c] = cur; p = link[p]; }
+        if (!p) {
+            link[cur] = 1;
+        } else {
+            int q = ch[p][c];
+            if (len[q] == len[p] + 1) {
+                link[cur] = q;
+            } else {
+                int clone = ++sz;
+                std::memcpy(ch[clone], ch[q], sizeof ch[q]);
+                len[clone] = len[p] + 1;
+                link[clone] = link[q];
+                cnt[clone] = 0;
+                while (p &amp;&amp; ch[p][c] == q) { ch[p][c] = clone; p = link[p]; }
+                link[q] = link[cur] = clone;
+            }
+        }
+        last = cur;
+    }
+};</code></pre>
+
+      <p><code>cnt[clone]=0</code> 这一句不能省。克隆状态是一个人为造出来的等价类，它不对应原串的任何位置，只继承转移与 <code>link</code>；把它的出现次数记成 1，后面累加时会凭空多算。</p>
+
+      <h2>三、出现次数与子串计数</h2>
+
+      <p>每个前缀对应的状态 <code>cnt=1</code>，其余为 0。按 <code>len</code> 从大到小把 <code>cnt</code> 沿 <code>link</code> 累加，就得到每个状态所代表的那些子串在原串中的出现次数。同一等价类内的子串出现次数相同，这是 <code>endpos</code> 定义直接给出的结论。</p>
+
+      <pre><code>for (int i = 1; i &lt;= sz; ++i) ++bucket[len[i]];
+for (int i = 1; i &lt;= n; ++i) bucket[i] += bucket[i - 1];
+for (int i = 1; i &lt;= sz; ++i) ord[bucket[len[i]]--] = i;
+for (int i = sz; i &gt;= 1; --i)
+    cnt[link[ord[i]]] += cnt[ord[i]];</code></pre>
+
+      <p>不同子串的个数为 $\sum_v\left(len_v-len_{link_v}\right)$，因为每个状态贡献的长度区间恰好覆盖该类中的每个子串。若要求本质不同子串的出现次数之和，则为 $\sum_v cnt_v\cdot\left(len_v-len_{link_v}\right)$。这两个式子的区别只在一个权重，用错会直接错在数量级上。</p>
+
+      <h2>四、常见用法</h2>
+
+      <ul>
+        <li>最长公共子串：对 $A$ 建 SAM，拿 $B$ 沿转移走，失配时沿 <code>link</code> 回退并把当前匹配长度截到 <code>len[link]</code>，全程取最大值，复杂度 $O(|B|)$。</li>
+        <li>字典序第 $k$ 小子串：在转移 DAG 上做路径计数，从 $root$ 起逐位确定。按本质不同计数时每个状态权重为 1；按出现次数计数时权重为 <code>cnt</code>。</li>
+        <li>循环同构：在 $s+s$ 上匹配，长度限制为 $n$，看能否走满 $n$ 步。</li>
+        <li>子串出现位置：给每个状态挂一棵动态开点线段树，表示其 $endpos$ 集合，查询区间内是否出现；合并时用线段树合并，总复杂度 $O(n\log n)$。</li>
+        <li>多串公共子串：把所有串插入一棵 trie，在 trie 上 BFS 建广义 SAM，再统计每个状态的串数与出现次数。</li>
+      </ul>
+
+      <h2>五、与后缀数组的比较</h2>
+
+      <p>后缀数组能做的事 SAM 基本都能做，反之亦然，差别在常数、空间与接口。SAM 的转移是 $O(1)$，适合在线、多次形态不同的查询；代价是空间：$26\cdot2n$ 个 <code>int</code>，$n=10^6$ 时约 208 MB，很容易超限，需要按实际字符集压缩转移或用邻接表存转移。</p>
+
+      <p>后缀数组占的空间只有几个 $n$，倍增实现短，配合 RMQ 能做任意两个后缀的 LCP，但它描述的是后缀的字典序关系，涉及"子串出现次数"这类统计时，仍要回到 SAM 或后缀树。</p>
+
+      <p>选择的标准很实际：$n\le5\times10^5$、字符集小、需要在线查询，用 SAM；$n$ 上百万、只要后缀之间的序关系，用 SA。两者都写熟之后，看数据范围就能决定用哪个，不用再试。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 后缀自动机</span>
+      <span>00000008.html</span>
+    </div>
+  </main>
+</body>
+</html>

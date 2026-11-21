@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态规划专题：换根、虚树与树上依赖背包 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 动态规划专题</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000000c.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>动态规划专题：换根、虚树与树上依赖背包</h1>
+      <p class="meta">2026-11-21 · 编号 0000000c</p>
+
+      <p>树形 DP 的骨架只有一句"后序合并子节点"，真正难的是三件事：答案要在每个点作为根时都求一遍、询问只涉及少量关键点、合并的代价按哪一维计算。下面分别处理。</p>
+
+      <h2>一、换根：两遍扫描代替 $n$ 遍</h2>
+
+      <p>以"每个点到其余所有点的距离之和"为例。先任取 1 为根，做一次后序：<code>siz[u]</code> 为子树大小，<code>down[u]</code> 为 $u$ 到其子树内各点的距离和，则</p>
+
+      $$down_u=\sum_{v\in son(u)}\left(down_v+siz_v\right)$$
+
+      <p>再从上往下推一遍"全树"的答案 <code>all[u]</code>。把根从 $u$ 挪到它的儿子 $v$ 时，$v$ 子树内的 $siz_v$ 个点各近一格，其余 $n-siz_v$ 个点各远一格，于是</p>
+
+      $$all_v=all_u-siz_v+\left(n-siz_v\right)=all_u+n-2\,siz_v$$
+
+      <p>初始 <code>all[1] = down[1]</code>。两遍 DFS 都是 $O(n)$，若对每个点单独跑一次 DP 则是 $O(n^2)$，$n=10^6$ 时差距是决定性的。</p>
+
+      <pre><code>void dfs1(int u, int fa) {
+    siz[u] = 1; down[u] = 0;
+    for (int v : g[u]) {
+        if (v == fa) continue;
+        dfs1(v, u);
+        siz[u] += siz[v];
+        down[u] += down[v] + siz[v];
+    }
+}
+
+void dfs2(int u, int fa) {
+    for (int v : g[u]) {
+        if (v == fa) continue;
+        all[v] = all[u] + n - 2 * siz[v];
+        dfs2(v, u);
+    }
+}</code></pre>
+
+      <p>这套做法的通用形式是：先定义"只考虑子树"的量 $f$，再定义"考虑全树、且 $u$ 的父方向也算进来"的量 $h$，转移时把父方向那部分扣除或补上。凡是转移式里只出现子树大小、子树和这类可减量，都能这样换根；出现最值且不可减（例如"子树内最大深度"去掉一个儿子后取次大），就要在每个点额外记录最大值与次大值，或者改用"按边方向"存储的 DP。</p>
+
+      <h2>二、虚树：把 $k$ 个关键点压成 $O(k)$ 个点</h2>
+
+      <p>多次询问，每次只关心 $k$ 个关键点及它们之间的路径。这些点与它们的 LCA 构成的树就是虚树，点数不超过 $2k-1$。在原树上做一次 $O(n)$ 的 DP 显然不划算，虚树上做一次 $O(k)$ 就够。</p>
+
+      <p>建法固定：把关键点按 DFS 序排序，顺次加入相邻两点的 LCA，再按 DFS 序排序；用栈维护当前最右链，遇到新点时不断弹出栈顶，直到栈顶是它的祖先，然后连边。全程只用 <code>dfn</code> 与 $O(1)$ 或 $O(\log n)$ 的 LCA。</p>
+
+      <pre><code>int dfn[MAXN], dep[MAXN], up[MAXN][20], timer;
+// 略去 dfs 求 dfn / dep / up
+
+int lca(int u, int v) {
+    if (dep[u] &lt; dep[v]) std::swap(u, v);
+    for (int k = 19; k &gt;= 0; --k)
+        if (dep[u] - (1 &lt;&lt; k) &gt;= dep[v]) u = up[u][k];
+    if (u == v) return u;
+    for (int k = 19; k &gt;= 0; --k)
+        if (up[u][k] != up[v][k]) u = up[u][k], v = up[v][k];
+    return up[u][0];
+}
+
+void build(std::vector&lt;int&gt; &amp;key) {
+    std::sort(key.begin(), key.end(), [](int a, int b) { return dfn[a] &lt; dfn[b]; });
+    int k = key.size();
+    for (int i = 1; i &lt; k; ++i) key.push_back(lca(key[i - 1], key[i]));
+    std::sort(key.begin(), key.end(), [](int a, int b) { return dfn[a] &lt; dfn[b]; });
+    key.erase(std::unique(key.begin(), key.end()), key.end());
+
+    std::vector&lt;int&gt; st;
+    st.push_back(key[0]);
+    for (size_t i = 1; i &lt; key.size(); ++i) {
+        int u = key[i], l = lca(u, st.back());
+        while (st.size() &gt;= 2 &amp;&amp; dfn[st[st.size() - 2]] &gt;= dfn[l]) {
+            addEdge(st[st.size() - 2], st.back());
+            st.pop_back();
+        }
+        if (st.back() != l) {
+            addEdge(l, st.back());
+            st.pop_back();
+            st.push_back(l);
+        }
+        st.push_back(u);
+    }
+    while (st.size() &gt;= 2) {
+        addEdge(st[st.size() - 2], st.back());
+        st.pop_back();
+    }
+}</code></pre>
+
+      <p>连边用的是另一套只属于虚树的邻接表。每次询问结束后必须清空它，且只清虚树上的点——遍历全部 $n$ 个点清空，复杂度又回到 $O(n)$，这是虚树题最常被卡的地方。虚树边上的信息（路径长度、路径最小值）要在建边时从原树查询出来，通常配倍增或树剖。</p>
+
+      <h2>三、树上依赖背包：合并上界决定复杂度</h2>
+
+      <p>$f_{u,j}$ 表示在 $u$ 的子树中选 $j$ 个点、且 $u$ 必选时的最大收益，转移是把每个儿子的背包并进来：</p>
+
+      $$f_{u,j+k}=\max\left(f_{u,j+k},\,f_{u,j}+f_{v,k}\right)$$
+
+      <p>关键在于两重循环的上界取"当前已合并的子树大小"与"$v$ 的子树大小"，而不是全树的 $m$。按前者计算，每一次 $(j,k)$ 合并都对应一对分属不同子树的点，每对点只被枚举一次，总代价 $O(n^2)$。按后者写，复杂度会退化到 $O(nm^2)$，$m$ 稍大就超时。</p>
+
+      <pre><code>void dfs(int u, int fa) {
+    siz[u] = 1;
+    f[u][1] = val[u];
+    for (int v : g[u]) {
+        if (v == fa) continue;
+        dfs(v, u);
+        for (int j = siz[u]; j &gt;= 1; --j) {
+            if (f[u][j] == NEG) continue;
+            for (int k = 1; k &lt;= siz[v]; ++k)
+                if (f[v][k] != NEG)
+                    f[u][j + k] = std::max(f[u][j + k], f[u][j] + f[v][k]);
+        }
+        siz[u] += siz[v];
+    }
+}</code></pre>
+
+      <p>内层 <code>j</code> 必须倒序：正序会让同一个儿子被重复合并，与 0-1 背包正序枚举是同一类错误。初始化要把不可达状态设成负无穷而不是 0，否则"选不出这么多点"会被当成收益为 0 的合法方案。</p>
+
+      <h2>四、三者的连接点</h2>
+
+      <p>换根解决"根不唯一"，虚树解决"询问只涉及一部分点"，依赖背包解决"合并的代价怎么估"。三者共同的前提仍是第一篇那条：状态必须闭合。换根时若 $f$ 里含了"父节点是否被选"这类信息，向上转移就要多带一维；虚树建边时若把路径信息压成一个数，DP 的合并方式也要相应改；依赖背包若允许不选 $u$ 而选其子孙，状态要拆成 $f_{u,0},f_{u,1}$ 两个。</p>
+
+      <p>这三类题的调试办法都一样：先写 $O(n^2)$ 或 $O(nk)$ 的朴素版本，随机小树对拍；虚树的点集是否正确，可以直接比较"虚树上所有点对的距离和"与"暴力在原树上算出的值"。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 动态规划专题</span>
+      <span>0000000c.html</span>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态规划（二）：决策单调性与四边形不等式 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 动态规划（二）</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000005.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>动态规划（二）：决策单调性与四边形不等式</h1>
+      <p class="meta">2026-11-19 · 编号 00000005</p>
+
+      <p>有一类转移，状态和方程都很朴素，复杂度却卡在枚举决策点上：$n$ 个阶段，每个阶段枚举 $n$ 个决策，总复杂度 $O(n^2)$。若最优决策点随阶段单调移动，枚举范围就可以收窄，$O(n^2)$ 降到 $O(n\log n)$；按层递推的区间形式也能把每层降下来。这件事的判据是四边形不等式。</p>
+
+      <h2>一、问题的形状</h2>
+
+      <p>讨论形如</p>
+
+      $$f_i=\min_{0\le j&lt;i}\left(f_j+w(j,i)\right)$$
+
+      <p>的转移，其中 $w(j,i)$ 只与决策点和阶段有关，与 $f$ 无关。记 $opt_i$ 为使上式取到最小值的 $j$（有多个时取最小者）。直接做是 $O(n^2)$。若 $opt_i$ 随 $i$ 单调不减，则计算 $f_{mid}$ 时只需在 $[opt_{l},opt_{r}]$ 内枚举，且这个范围可以在递归中传下去。</p>
+
+      <h2>二、四边形不等式</h2>
+
+      <p>对 $a\le b\le c\le d$，若</p>
+
+      $$w(a,c)+w(b,d)\le w(a,d)+w(b,c)$$
+
+      <p>成立，称 $w$ 满足四边形不等式，也叫凸性或者 Monge 条件。若同时满足</p>
+
+      $$w(b,c)\le w(a,d)$$
+
+      <p>称 $w$ 关于区间包含单调。两者合起来，足以保证上面的 $opt$ 单调不减。证明用交换论证。</p>
+
+      <p>设 $i_1&lt;i_2$，而 $opt_{i_1}=j_2$、$opt_{i_2}=j_1$，且 $j_1&lt;j_2$，即决策点在两个阶段上反序。由最优性，</p>
+
+      $$f_{j_2}+w(j_2,i_1)\le f_{j_1}+w(j_1,i_1)$$
+
+      $$f_{j_1}+w(j_1,i_2)\le f_{j_2}+w(j_2,i_2)$$
+
+      <p>两式相加消去 $f$，得到</p>
+
+      $$w(j_2,i_1)+w(j_1,i_2)\le w(j_1,i_1)+w(j_2,i_2)$$
+
+      <p>而 $j_1&lt;j_2&lt;i_1&lt;i_2$ 时，取 $a=j_1,\ b=j_2,\ c=i_1,\ d=i_2$，四边形不等式给出的是</p>
+
+      $$w(j_1,i_1)+w(j_2,i_2)\le w(j_1,i_2)+w(j_2,i_1)$$
+
+      <p>两个不等式方向相反，只在全部取等号时相容。取等号时按规定选最小的决策点，反序假设即被排除。区间包含单调这一条在大多数分段代价的题里自动成立，真正需要验证的往往是四边形不等式。</p>
+
+      <h2>三、分治优化</h2>
+
+      <p>分治优化用于按层递推的形式：$f_{k,i}=\min_{j&lt;i}\left(f_{k-1,j}+w(j,i)\right)$。第 $k-1$ 层已经整层算完，递归时无论先处理哪一半，被查询的值都已就绪，这是它能成立的前提。若 $f$ 依赖同层更小的下标（原地递推），则必须先按 $i$ 递增计算，分治优化不能直接用，要么改成 CDQ 分治，要么退回单调指针。</p>
+
+      <p>在 $opt$ 单调的前提下，按 $mid$ 分治：先算 $f_{k,mid}$，枚举范围是 $[opt_L,\min(mid-1,opt_R)]$，得到 $opt_{mid}$ 后，左半段的决策点不会超过它，右半段不会小于它。</p>
+
+      <pre><code>long long pre[N], cur[N];
+
+void solve(int l, int r, int optL, int optR) {
+    if (l &gt; r) return;
+    int mid = (l + r) &gt;&gt; 1, best = optL;
+    long long val = LLONG_MAX;
+    int hi = std::min(mid - 1, optR);
+    for (int j = optL; j &lt;= hi; ++j) {
+        long long cand = pre[j] + w(j, mid);
+        if (cand &lt; val) val = cand, best = j;
+    }
+    cur[mid] = val;
+    solve(l, mid - 1, optL, best);
+    solve(mid + 1, r, best, optR);
+}
+
+// 每层：solve(1, n, 0, n - 1); 然后把 cur 拷到 pre</code></pre>
+
+      <p>每一层递归覆盖的区间长度之和是 $O(n)$，层数 $O(\log n)$，因此 $w$ 的求值次数是 $O(n\log n)$，$k$ 层合计 $O(kn\log n)$。注意这里统计的是求值次数，不是总时间：$w$ 必须能在 $O(1)$ 内算出。如果 $w$ 依赖莫队式的增删，单次均摊 $O(\sqrt n)$，总复杂度要乘上去，此时通常改用别的做法。</p>
+
+      <p>取等号时统一取最小的 $j$，否则左右递归的边界会不满足单调性，答案在小数据上就可能出错。</p>
+
+      <h2>四、Knuth 优化</h2>
+
+      <p>区间形式</p>
+
+      $$f_{i,j}=\min_{i\le k&lt;j}\left(f_{i,k}+f_{k+1,j}\right)+w(i,j)$$
+
+      <p>在 $w$ 满足上述两条时，有</p>
+
+      $$opt_{i,j-1}\le opt_{i,j}\le opt_{i+1,j}$$
+
+      <p>于是枚举 $k$ 只需取这三者夹出的区间。按长度从小到大递推，每个区间的枚举量均摊为常数，总复杂度 $O(n^2)$。</p>
+
+      <pre><code>for (int i = 1; i &lt;= n; ++i) f[i][i] = 0, opt[i][i] = i;
+for (int len = 2; len &lt;= n; ++len)
+    for (int i = 1, j = len; j &lt;= n; ++i, ++j) {
+        f[i][j] = LLONG_MAX;
+        int lo = opt[i][j - 1];
+        int hi = std::min(opt[i + 1][j], j - 1);
+        for (int k = lo; k &lt;= hi; ++k) {
+            long long cur = f[i][k] + f[k + 1][j];
+            if (cur &lt; f[i][j]) f[i][j] = cur, opt[i][j] = k;
+        }
+        f[i][j] += s[j] - s[i - 1];
+    }</code></pre>
+
+      <p>循环顺序不能颠倒：计算长度 $len$ 时要用到长度 $len-1$ 的 $opt_{i,j-1}$ 与 $opt_{i+1,j}$，两者在同一轮外层循环里已经算完。</p>
+
+      <h2>五、条件不成立时怎么办</h2>
+
+      <p>有些 $w$ 看上去是凸的，实际只满足一半条件。验证的办法不复杂：写一份 $O(n^2)$ 的暴力，随机生成小数据比对答案；再写一个检查器，枚举所有 $i$ 验证 $opt_i$ 是否单调。这比"感觉这个代价是凸的"可靠得多，也花不了几分钟。</p>
+
+      <p>另一条路是 SMAWK 算法：当整张决策矩阵完全单调时，可以在 $O(n)$ 内求出每行的最小值。它的条件比决策单调更强，常数也大，OI 里用得很少，知道有这个东西即可。</p>
+
+      <p>还要提醒一句：决策单调与 $f$ 值单调是两回事。不要拿 $f_i$ 递增或递减当作转移合法的依据，它们之间没有推出关系。</p>
+
+      <h2>六、常见适用面</h2>
+
+      <ul>
+        <li>分段代价：把序列切成 $k$ 段，代价是段内元素两两距离之和，用前缀和可以在 $O(1)$ 内算出 $w$，分治优化后为 $O(kn\log n)$。</li>
+        <li>绝对值距离：$w(j,i)=\sum_{t=j}^{i}|a_t-b|$ 一类，先排序再前缀和，$w$ 满足四边形不等式。</li>
+        <li>树上分层转移：状态按深度分层时，同一层内的决策点单调，可以对每层做分治。</li>
+        <li>邮局选址：$k$ 个邮局覆盖 $n$ 个村庄，代价是到最近邮局的距离和，是四边形不等式的经典例子，配合分治优化可以做到 $O(kn\log n)$。</li>
+      </ul>
+
+      <p>下一篇处理另一种形状：转移式里出现决策变量与阶段变量的乘积，此时单调的不是决策点，而是一条凸壳上的切线。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 动态规划（二）</span>
+      <span>00000005.html</span>
+    </div>
+  </main>
+</body>
+</html>

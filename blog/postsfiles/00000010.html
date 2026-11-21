@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>树链剖分：重链、DFS 序与路径查询 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 树链剖分</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000010.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>树链剖分：重链、DFS 序与路径查询</h1>
+      <p class="meta">2026-11-21 · 编号 00000010</p>
+
+      <p>树上的路径查询要落到线段树上做，前提是把路径拆成若干段连续区间。树链剖分给出的拆法是：沿"重儿子"一路走成链，每条链在 DFS 序里是连续一段，任意路径只跨越 $O(\log n)$ 条链。预处理 $O(n)$，一次路径查询 $O(\log^2 n)$。</p>
+
+      <h2>一、重儿子与轻边</h2>
+
+      <p>对每个点 $u$，在它的儿子中取子树最大的那个，称为重儿子；连向重儿子的边叫重边，其余叫轻边。从 $u$ 出发沿重边一路向下，得到一条重链，链与链之间由轻边相连。</p>
+
+      <p>关键性质：轻边 $(u,v)$ 满足 $siz_v\le \dfrac{siz_u}{2}$。因为 $v$ 不是最大的儿子，就存在另一个儿子 $w$ 满足 $siz_w\ge siz_v$，于是 $siz_u\ge 1+siz_v+siz_w\ge 1+2\,siz_v$。所以从任意点向上走到根，经过的轻边不超过 $O(\log n)$ 条，跨越的重链也不超过这个数。路径查询的复杂度就来自这里。</p>
+
+      <h2>二、两遍 DFS</h2>
+
+      <p>第一遍求子树大小与重儿子；第二遍分配 DFS 序，并让重儿子紧跟在父亲之后，保证同一条链在序上连续、同一棵子树在序上连续。</p>
+
+      <pre><code>int siz[MAXN], son[MAXN], fa[MAXN], dep[MAXN];
+int dfn[MAXN], top[MAXN], rk[MAXN], timer;
+
+void dfs1(int u, int f) {
+    siz[u] = 1; son[u] = 0; fa[u] = f; dep[u] = dep[f] + 1;
+    for (int v : g[u]) {
+        if (v == f) continue;
+        dfs1(v, u);
+        siz[u] += siz[v];
+        if (siz[v] &gt; siz[son[u]]) son[u] = v;
+    }
+}
+
+void dfs2(int u, int t) {
+    top[u] = t;
+    dfn[u] = ++timer;
+    rk[timer] = u;
+    if (son[u]) dfs2(son[u], t);                  // 重儿子继承链头
+    for (int v : g[u])
+        if (v != fa[u] &amp;&amp; v != son[u]) dfs2(v, v); // 轻儿子自立链头
+}</code></pre>
+
+      <p><code>siz[0]=0</code> 使叶子的 <code>son</code> 为 0，不必特判。<code>rk</code> 是 DFS 序到点号的映射，建树时按 <code>rk</code> 取点权。递归深度等于树高，链状数据下 $n$ 上万就可能爆栈，改成手写栈或调大栈空间。</p>
+
+      <h2>三、路径查询</h2>
+
+      <p>两端不在同一条链上时，把链头更深的那一端整段查掉，再跳到链头的父亲；直到同链，查剩余一段。每一轮至少上移一条链，轮数 $O(\log n)$，每轮一次线段树查询，合计 $O(\log^2 n)$。</p>
+
+      <pre><code>long long pathQuery(int u, int v) {
+    long long s = 0;
+    while (top[u] != top[v]) {
+        if (dep[top[u]] &lt; dep[top[v]]) std::swap(u, v);
+        s += query(1, 1, n, dfn[top[u]], dfn[u]);
+        u = fa[top[u]];
+    }
+    if (dep[u] &gt; dep[v]) std::swap(u, v);
+    s += query(1, 1, n, dfn[u], dfn[v]);
+    return s;
+}</code></pre>
+
+      <p>比较的是 <code>top</code> 的深度，不是 <code>u</code> 与 <code>v</code> 的深度。写成后者时多数数据仍能过，只在链头深度关系特殊时出错，属于"看着像对的"那一类。最后同链的一段要先交换，使 <code>u</code> 更浅，区间才是 <code>[dfn[u], dfn[v]]</code>。</p>
+
+      <p>子树查询更简单：子树在 DFS 序里是 <code>[dfn[u], dfn[u]+siz[u]-1]</code>，一次线段树操作，$O(\log n)$。路径修改与查询同构，把 <code>query</code> 换成带懒标记的 <code>modify</code>。</p>
+
+      <h2>四、边权与点权</h2>
+
+      <p>题给的是边权时，把每条边的权下放到深度较大的端点，路径查询的中间段不变，但最后同链的一段要去掉 LCA 那个点：查询区间改成 <code>[dfn[u]+1, dfn[v]]</code>，其中 <code>u</code> 是较浅的 LCA。这一步漏掉，会把 LCA 上方的边权算进来。</p>
+
+      <p>反过来，点权转边权（例如查询路径上的点权和但不含两端）也常用类似处理，写之前先明确"端点算不算"，再决定区间是否加减一。</p>
+
+      <h2>五、与其他结构的配合</h2>
+
+      <ul>
+        <li>线段树维护区间和、区间最值、区间加、区间赋值，按题目选用；树剖只负责把路径变成区间，不决定线段树维护什么。</li>
+        <li>LCA 可以直接用树剖求：跳链到同一条后，浅的那个就是 LCA，常数小于倍增。</li>
+        <li>需要子树整体加、路径求和时，树剖加线段树是标准组合，$O(\log^2 n)$。</li>
+        <li>Link-Cut Tree 把"链"改成动态维护的 splay，支持加边删边，复杂度均摊 $O(\log n)$，但常数与实现难度都高出一截。树形态固定时，没有必要上 LCT。</li>
+      </ul>
+
+      <h2>六、常见错误</h2>
+
+      <p>一是 <code>dfn</code> 与点号混用：建树、查询里所有下标都必须是 DFS 序，取权值要经过 <code>rk</code>。二是重儿子为空时仍去 <code>dfs2(son[u], ...)</code>，访问到 0 号点。三是多组数据忘记清空 <code>timer</code>、<code>head</code> 与线段树数组。四是把 <code>top</code> 的初值写成 0，跳链时得到 <code>fa[0]</code>，答案随机偏移。</p>
+
+      <p>验证方式：随机小树，路径查询与"逐点向上累加"对拍；子树查询与"枚举所有后代"对拍。树剖的边界问题基本都在这两项里暴露。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 树链剖分</span>
+      <span>00000010.html</span>
+    </div>
+  </main>
+</body>
+</html>

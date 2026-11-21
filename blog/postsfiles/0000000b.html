@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态规划（五）：数位、树形、期望与矩阵 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 动态规划（五）</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000000b.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>动态规划（五）：数位、树形、期望与矩阵</h1>
+      <p class="meta">2026-11-21 · 编号 0000000b</p>
+
+      <p>前四篇讨论的是转移的形状：怎样定义状态、怎样沿 DAG 展开、怎样压缩枚举范围。这一篇补上另外几种常见展开方式：按数的位展开、按子树展开、按概率展开、按时间步展开。它们的共同点仍是先确认无后效性，再选合并的次序。</p>
+
+      <h2>一、数位 DP</h2>
+
+      <p>状态是"从最高位填到第几位"，外加两个布尔量：<code>tight</code> 表示前缀是否紧贴上界，决定了当前位能填到几；<code>lead</code> 表示是否还处在前导零里，决定数字 0 算不算数的一部分。这两个量都不能省，尤其是 <code>lead</code>：很多计数题把 0 当成合法数字，前导零一参与，答案就整体偏移。</p>
+
+      <p>区间 $[l,r]$ 的结果等于 $[0,r]$ 与 $[0,l-1]$ 的结果之差。下面这段统计 $[0,r]$ 中十进制表示不含 4、且不出现相邻 62 的数的个数，其中把 0 也计入。</p>
+
+      <pre><code>int a[20], len;               // a[1..len] 为 r 的各位，低位在前，a[len] 即最高位
+long long f[20][11];          // 只缓存 !tight &amp;&amp; !lead 的状态，初值 -1
+
+long long dfs(int pos, int last, bool tight, bool lead) {
+    if (pos == 0) return 1;   // 0 也被计入，需要时在调用处减 1
+    if (!tight &amp;&amp; !lead &amp;&amp; f[pos][last] != -1) return f[pos][last];
+
+    int up = tight ? a[pos] : 9;
+    long long sum = 0;
+    for (int d = 0; d &lt;= up; ++d) {
+        if (d == 4) continue;
+        if (!lead &amp;&amp; last == 6 &amp;&amp; d == 2) continue;
+        sum += dfs(pos - 1, d, tight &amp;&amp; d == up, lead &amp;&amp; d == 0);
+    }
+
+    if (!tight &amp;&amp; !lead) f[pos][last] = sum;
+    return sum;
+}
+
+long long count(long long r) {
+    if (r &lt; 0) return 0;
+    len = 0;
+    while (r) { a[++len] = r % 10; r /= 10; }
+    return dfs(len, 10, true, true);   // 从最高位 a[len] 起填
+}</code></pre>
+
+      <p>缓存条件写成 <code>!tight &amp;&amp; !lead</code> 是有原因的：<code>tight</code> 的状态与上界的具体数字绑定，<code>lead</code> 的状态在"是否允许前导零"上语义不同，缓存它们会把不同问题的答案混在一起。真要省掉 <code>lead</code>，办法是在外层枚举数字长度，从第一位起就非零。</p>
+
+      <h2>二、树形 DP</h2>
+
+      <p>树上没有自然的线性次序，后序 DFS 给出一个：子树全部算完之后再合并到父节点。以最大权独立集为例，$f_{u,0}$ 表示 $u$ 不选时子树的最大权，$f_{u,1}$ 表示 $u$ 选。若选 $u$，子节点一律不能选；不选 $u$，子节点各自取两种状态的较大值。</p>
+
+      <pre><code>void dfs(int u, int fa) {
+    f[u][1] = w[u];
+    f[u][0] = 0;
+    for (int v : g[u]) {
+        if (v == fa) continue;
+        dfs(v, u);
+        f[u][1] += f[v][0];
+        f[u][0] += std::max(f[v][0], f[v][1]);
+    }
+}</code></pre>
+
+      <p>树上背包是同一骨架的复杂版本：$f_{u,j}$ 表示在 $u$ 的子树里选 $j$ 个点的最大收益，合并子节点时做一次卷积。合并的循环上界取"已合并部分的点数"与"当前子树的点数"，这样总复杂度是 $O(n^2)$ 而不是 $O(n^3)$。把上界写成常数 $m$ 是最常见的写法错误，复杂度会平白多出一维。</p>
+
+      <h2>三、期望 DP</h2>
+
+      <p>期望是线性泛函，所以"期望的转移"可以把当前状态写成后继状态期望的加权和，权是转移概率。困难出现在方程有环的时候：状态之间存在回边，右侧含未知量，不能直接递推。</p>
+
+      <p>单个自环好处理。设从 $u$ 出发，每步有概率 $p$ 留在原地、概率 $1-p$ 走向已知答案 $c$，则</p>
+
+      $$f_u=1+p\,f_u+(1-p)c$$
+
+      <p>移项得 $f_u=\dfrac{1+(1-p)c}{1-p}$。多个状态互相耦合时，把方程组写成矩阵，用高斯消元解；若图是树形或分层 DAG 加少量回边，可以按拓扑序消元，复杂度从 $O(n^3)$ 降到 $O(n)$。</p>
+
+      <p>写这类题要先确认两件事：转移是否构成概率分布（和为 1），以及终止状态是否可达。期望为无穷的题必须单独判断，直接递推会得到无意义的数。</p>
+
+      <h2>四、矩阵加速线性递推</h2>
+
+      <p>若 $f_i$ 只由前 $k$ 项线性组合给出，把状态写成向量 $(f_i,f_{i-1},\dots,f_{i-k+1})$，一步转移是一个 $k\times k$ 的常数矩阵。求第 $n$ 项即求矩阵的 $n$ 次幂，复杂度 $O(k^3\log n)$。</p>
+
+      <pre><code>struct Mat {
+    long long a[2][2];
+    Mat operator*(const Mat &o) const {
+        Mat r{};
+        for (int i = 0; i &lt; 2; ++i)
+            for (int k = 0; k &lt; 2; ++k)
+                for (int j = 0; j &lt; 2; ++j)
+                    r.a[i][j] = (r.a[i][j] + a[i][k] * o.a[k][j]) % MOD;
+        return r;
+    }
+};
+
+Mat mpow(Mat b, long long e) {
+    Mat r{{{1, 0}, {0, 1}}};
+    for (; e; e &gt;&gt;= 1, b = b * b)
+        if (e &amp; 1) r = r * b;
+    return r;
+}</code></pre>
+
+      <p>上面是二阶的例子，推广时把维数换成 $k$。矩阵乘法里 <code>a[i][k] * o.a[k][j]</code> 要用 <code>long long</code>，模数接近 $10^9$ 时乘积接近 $10^{18}$，再往上就得用 <code>__int128</code> 或每次乘完立即取模。</p>
+
+      <p>只求单项、$k$ 又很大时，矩阵幂不是最优：用特征多项式与 Bostan–Mori 可以做到 $O(k\log k\log n)$。竞赛中 $k\le 100$ 时矩阵幂足够，别为了渐进复杂度把代码写复杂。</p>
+
+      <h2>五、单调队列与子集和</h2>
+
+      <p>两类容易被忽略的转移。第一类是滑动窗口最值：</p>
+
+      $$f_i=a_i+\min_{i-m\le j\le i-1}f_j$$
+
+      <p>维护一个存下标的单调队列，队首是窗口内 $f$ 最小者，过期就弹，$O(n)$。它与第二篇的决策单调性不是一回事：这里单调的是下标窗口，不是决策点。</p>
+
+      <p>第二类是子集和变换。给定 $g_T$，要求每个 $S$ 的 $f_S=\sum_{T\subseteq S}g_T$，按位做高维前缀和即可，复杂度 $O(n2^n)$：</p>
+
+      <pre><code>for (int b = 0; b &lt; n; ++b)
+    for (int S = 0; S &lt; (1 &lt; n); ++S)
+        if (S &gt;&gt; b &amp; 1) f[S] += f[S ^ (1 &lt; b)];</code></pre>
+
+      <p>若还要求两侧集合大小之和为定值，就要按 <code>popcount</code> 分层，再对每层做一次卷积，即子集卷积，复杂度 $O(n^2 2^n)$。直接把两层加在一起会重复计数，这是子集卷积最常见的错误。</p>
+
+      <h2>六、把五篇连起来</h2>
+
+      <p>状态的取法只有一条标准：后续决策需要什么，就记什么，记完之后仍无法区分且答案相同的情形合并。转移的次序只有一条标准：按依赖关系走，无环就递推，有环就先消元或先分层。优化的手段则取决于转移里出现的是什么：出现区间代价，考虑四边形不等式；出现乘积项，考虑斜率；出现小集合，考虑状压与轮廓线；出现线性组合，考虑矩阵。</p>
+
+      <p>写完之后先算状态数乘以转移代价，再考虑常数。对拍用暴力，验证决策单调性用检查器，插头与数位的边界用最小规模的数据。这三件事做完，正确率比多背几个模板高得多。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 动态规划（五）</span>
+      <span>0000000b.html</span>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态规划专题：WQS 二分与拉格朗日松弛 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 动态规划专题</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000000e.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>动态规划专题：WQS 二分与拉格朗日松弛</h1>
+      <p class="meta">2026-11-21 · 编号 0000000e</p>
+
+      <p>题目要求"恰好选 $k$ 个"，而状态里带上"选了几个"会让复杂度多一维。若最优值与 $k$ 的关系是离散凹的，可以给每个选取加一个罚金 $\lambda$，把约束去掉，再二分 $\lambda$ 反解出 $k$。这套做法在 OI 里叫 WQS 二分或 Aliens trick，本质是拉格朗日松弛。</p>
+
+      <h2>一、把约束塞进目标函数</h2>
+
+      <p>设 $f(k)$ 为恰好选 $k$ 个时的最优值。定义</p>
+
+      $$g(\lambda)=\max_{k}\left(f(k)-\lambda k\right)$$
+
+      <p>$g$ 是 $f$ 的支撑函数：给每个选取定价 $\lambda$，不再限制个数，让算法自己决定选多少。对固定的 $\lambda$，$g(\lambda)$ 对应的那个 $k$（记作 $k(\lambda)$）就是最优决策的个数。$\lambda$ 越大，选取越贵，$k(\lambda)$ 越小；这正是能二分的原因。</p>
+
+      <p>$k(\lambda)$ 单调的充分条件是 $f$ 离散凹：差分 $\Delta_k=f(k)-f(k-1)$ 随 $k$ 递减。此时每个 $k$ 都是某条斜率 $\lambda$ 的支撑点，二分找到使 $k(\lambda)\le k$ 的最小 $\lambda$，就能把 $f(k)$ 还原为</p>
+
+      $$f(k)=g(\lambda)+\lambda k$$
+
+      <p>几何上，$f$ 的点集位于其上凸包的下方；$g(\lambda)$ 是斜率为 $\lambda$ 的支撑线与纵轴的交点。若 $f$ 不凹，中间的点不在凸包上，无论怎么二分都取不到它。</p>
+
+      <h2>二、二分的对象是罚金，不是答案</h2>
+
+      <p>二分的区间要覆盖所有可能的斜率：取 $C$ 大于任意单个决策的收益绝对值之和，令 $\lambda\in[-C,C]$。$\lambda=-C$ 时选取几乎免费，$k(\lambda)$ 取到最大；$\lambda=C$ 时 $k(\lambda)$ 取到最小。于是"$k(\lambda)\le k$"在区间右端为真、左端为假（只要 $k$ 可行），二分有解。</p>
+
+      <p>比较两个候选解时不能只看值。值与个数都要参与比较：值大者优；值相同时，统一取个数少者（或统一取多者，但不能两种混用）。这套比较让 $k(\lambda)$ 成为"值相同情形下的最小个数"，它关于 $\lambda$ 单调不增，二分才稳定。若只在值相等时随便取，$k(\lambda)$ 会在平台上来回跳，二分收敛到一个错误的 $\lambda$，最后的 $g(\lambda)+\lambda k$ 也随之出错。</p>
+
+      <h2>三、check 怎么写：以最大 $k$ 段和为例</h2>
+
+      <p>给定序列 $a_1,\dots,a_n$，选恰好 $k$ 个互不相交的非空连续段，使元素和最大。带罚金的版本不限制段数，用两个状态即可：<code>f0</code> 表示当前位置不在段内，<code>f1</code> 表示在段内。每开一个新段扣 $\lambda$。</p>
+
+      <pre><code>typedef long long ll;
+const ll NEG = -(ll)4e18;
+
+struct P { ll val; int cnt; };
+
+bool better(const P &amp;a, const P &amp;b) {      // 值大者优，值相同取段数少者
+    if (a.val != b.val) return a.val &gt; b.val;
+    return a.cnt &lt; b.cnt;
+}
+P bestP(P a, P b) { return better(a, b) ? a : b; }
+
+P check(ll lam) {
+    P f0{0, 0}, f1{NEG, 0};
+    for (ll x : a) {
+        P n0 = bestP(f0, f1);                        // 在这一格之前收尾
+        P n1 = bestP(P{f1.val + x, f1.cnt},          // 延续上一段
+                     P{n0.val + x - lam, n0.cnt + 1});// 开新段，扣罚金
+        f0 = n0; f1 = n1;
+    }
+    return bestP(f0, f1);
+}
+
+ll solve(int k) {
+    ll C = 1;
+    for (ll x : a) C += llabs(x);
+    ll lo = -C, hi = C;
+    while (lo &lt; hi) {
+        ll mid = lo + (hi - lo) / 2;
+        if (check(mid).cnt &lt;= k) hi = mid;
+        else lo = mid + 1;
+    }
+    P r = check(lo);
+    return r.val + lo * (ll)k;
+}</code></pre>
+
+      <p><code>n0</code> 必须先算，再用它去开新段。写成"用上一轮的 <code>f0</code> 开新段"会漏掉"上一段恰好在上一格结束、新段从这一格开始"的情形，也就是相邻两段的情形。这个错误在小数据上表现为答案偏小，且只在 $k$ 较大时出现，不容易一眼看出来。</p>
+
+      <p>check 是 $O(n)$，二分 $O(\log C)$ 次，总复杂度 $O(n\log C)$，与 $k$ 无关。原来的 $O(nk)$ 或 $O(nk\log n)$ 在这套做法前没有优势。</p>
+
+      <h2>四、成立条件必须验证</h2>
+
+      <p>WQS 二分的唯一前提是 $f$ 离散凹。这个性质不会从题面里读出来，写之前应当验证：对小 $n$ 枚举所有 $k$，算出 $f(k)$，检查差分是否递减。随机若干组数据，若出现 $\Delta_{k+1}&gt;\Delta_k$，这套做法就不成立，得回到带个数维度的 DP。</p>
+
+      <p>常见满足凹性的情形：选 $k$ 个互不相交区间、选 $k$ 条不相交路径、树上选 $k$ 个两两距离受限的点。常见不满足的情形：要求恰好 $k$ 个且每个的收益独立但可正可负、带背包体积约束——后者的 $f(k)$ 一般不是凹的，硬套会得到偏小的答案。</p>
+
+      <h2>五、几种变形</h2>
+
+      <ul>
+        <li>最小化问题：把收益取负，或把罚金改成奖励，二者等价；注意比较方向与二分条件一起翻转。</li>
+        <li>答案是实数：罚金也取实数，二分改成固定次数（如 60 次），最后用 <code>g + λk</code> 还原并注意误差放大。</li>
+        <li>要求"至少 $k$ 个"：若 $f$ 单调不减，直接取 $k(\lambda)\ge k$ 的一侧，答案仍在同一条支撑线上。</li>
+        <li>树上选点：check 换成树上 DP，其余不变；此时 check 的复杂度决定总复杂度，常配换根或重链剖分。</li>
+      </ul>
+
+      <p>最后一句提醒：二分结束后要再调用一次 <code>check(lo)</code>，不能复用循环里最后一次的结果。二分退出时 <code>lo</code> 与最后一次 <code>mid</code> 未必相同，用错那一次的 <code>cnt</code> 去还原，答案会差一个 $\lambda$。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 动态规划专题</span>
+      <span>0000000e.html</span>
+    </div>
+  </main>
+</body>
+</html>

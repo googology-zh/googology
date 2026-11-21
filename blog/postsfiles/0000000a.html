@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>多项式乘法：NTT 的推导与实现 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 多项式乘法与 NTT</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000000a.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>多项式乘法：NTT 的推导与实现</h1>
+      <p class="meta">2026-11-17 · 编号 0000000a</p>
+
+      <p>两个次数为 $n$ 的多项式直接相乘是 $O(n^2)$；换成点值表示，乘法变成逐点相乘，只有 $O(n)$。所以只要能快速地来回转换系数与点值，卷积就能在 $O(n\log n)$ 内完成。快速傅里叶变换做的是这件事，数论变换（NTT）是它在模意义下的版本，没有浮点误差。</p>
+
+      <h2>一、单位根与原根</h2>
+
+      <p>取 $n=2^k$，在模 $p$ 意义下取 $n$ 次单位根 $\omega_n=g^{(p-1)/n}$，其中 $g$ 是模 $p$ 的原根。要让它存在，$p-1$ 必须能被 $n$ 整除，因此模数取形如 $c\cdot2^k+1$ 的素数。常用的三个：</p>
+
+      <ul>
+        <li>$998244353=119\cdot2^{23}+1$，原根 $3$，支持长度到 $2^{23}$。</li>
+        <li>$1004535809=479\cdot2^{21}+1$，原根 $3$。</li>
+        <li>$469762049=7\cdot2^{26}+1$，原根 $3$。</li>
+      </ul>
+
+      <p>原根的含义是 $g^1,g^2,\dots,g^{p-1}$ 遍历 $1$ 到 $p-1$ 的所有非零剩余，所以 $\omega_n$ 的阶恰为 $n$。逆变换用 $\omega_n^{-1}=\omega_n^{n-1}$，最后整体乘 $n^{-1}$。</p>
+
+      <h2>二、蝶形</h2>
+
+      <p>Cooley–Tukey 把长度为 $n$ 的变换拆成偶下标与奇下标两个长度 $n/2$ 的变换 $A_0,A_1$，合并式为</p>
+
+      $$A(\omega_n^t)=A_0(\omega_{n/2}^t)+\omega_n^tA_1(\omega_{n/2}^t)$$
+
+      $$A(\omega_n^{t+n/2})=A_0(\omega_{n/2}^t)-\omega_n^tA_1(\omega_{n/2}^t)$$
+
+      <p>其中 $0\le t&lt;n/2$。这来自 $\omega_n^{n/2}=-1$ 与 $\omega_n^{2t}=\omega_{n/2}^{t}$。递归实现是 $O(n\log n)$，但函数调用与内存分配的开销很大。迭代版先做位逆序置换，把递归的访问次序摊平，再自底向上逐层合并，内层访问连续，缓存友好。</p>
+
+      <h2>三、实现</h2>
+
+      <pre><code>const int MOD = 998244353, G = 3;
+
+int power(int a, int b) {
+    int r = 1;
+    for (; b; b &gt;&gt;= 1, a = (long long)a * a % MOD)
+        if (b &amp; 1) r = (long long)r * a % MOD;
+    return r;
+}
+
+void ntt(std::vector&lt;int&gt; &amp;a, bool inv) {
+    int n = a.size();
+    for (int i = 1, j = 0; i &lt; n; ++i) {
+        int bit = n &gt;&gt; 1;
+        for (; j &amp; bit; bit &gt;&gt;= 1) j ^= bit;
+        j ^= bit;
+        if (i &lt; j) std::swap(a[i], a[j]);
+    }
+    for (int len = 2; len &lt;= n; len &lt;&lt;= 1) {
+        int w = power(G, (MOD - 1) / len);
+        if (inv) w = power(w, MOD - 2);
+        for (int i = 0; i &lt; n; i += len) {
+            int cur = 1;
+            for (int k = 0; k &lt; len / 2; ++k) {
+                int u = a[i + k];
+                int v = (long long)a[i + k + len / 2] * cur % MOD;
+                a[i + k] = u + v &gt;= MOD ? u + v - MOD : u + v;
+                a[i + k + len / 2] = u - v &lt; 0 ? u - v + MOD : u - v;
+                cur = (long long)cur * w % MOD;
+            }
+        }
+    }
+    if (inv) {
+        int ni = power(n, MOD - 2);
+        for (int &amp;x : a) x = (long long)x * ni % MOD;
+    }
+}</code></pre>
+
+      <p>位逆序置换里 <code>j</code> 始终保持 <code>i</code> 的位反转，<code>bit</code> 从最高位往下试，这段写法比"逐位拼出反转值"快很多。</p>
+
+      <p>卷积的流程：长度取不小于 $n+m-1$ 的二的幂，两个数组补零，各做一次正变换，逐点相乘，做一次逆变换。</p>
+
+      <pre><code>std::vector&lt;int&gt; convolution(std::vector&lt;int&gt; a, std::vector&lt;int&gt; b) {
+    int need = a.size() + b.size() - 1, n = 1;
+    while (n &lt; need) n &lt;&lt;= 1;
+    a.resize(n); b.resize(n);
+    ntt(a, false); ntt(b, false);
+    for (int i = 0; i &lt; n; ++i) a[i] = (long long)a[i] * b[i] % MOD;
+    ntt(a, true);
+    a.resize(need);
+    return a;
+}</code></pre>
+
+      <h2>四、常数</h2>
+
+      <ul>
+        <li><code>int</code> 乘法必须转 <code>long long</code>，$998244353^2\approx10^{18}$，不转就溢出。</li>
+        <li>加减改成条件判断，省掉两次取模；上面的写法依赖 $u,v\in[0,MOD)$ 这个前提。</li>
+        <li>每层重新调用快速幂求单位根的开销不可忽略，可以把每层的根预计算成表，或干脆预计算全长度的根数组按下标取值。</li>
+        <li>长度固定的多次卷积，把 rev 数组只算一次，省掉每次的位逆序循环。</li>
+        <li>递归版在 $n=2^{20}$ 附近比迭代版慢数倍，除非为了可读性，不要用。</li>
+      </ul>
+
+      <h2>五、任意模数</h2>
+
+      <p>题目给的模数不一定是 NTT 友好的。三条路，按实现难度从高到低排：</p>
+
+      <p>三模 CRT：取三个 NTT 模数分别卷积，再用中国剩余定理合并。系数真值小于三者乘积（约 $4.7\times10^{26}$）时结果唯一。合并过程要用 <code>__int128</code> 或逐级取模，直接乘会溢出。</p>
+
+      <p>拆位：把系数拆成高 15 位与低 15 位，两个多项式各拆两份，做三次或四次卷积再拼回去。位数按模数大小选，拆得太细会多做好几次变换。</p>
+
+      <p><code>long double</code> FFT：靠 80 位精度把误差压到可接受范围，实现最简单，但对拍必须做；系数上 $10^9$、长度上 $10^6$ 时误差会累积，不能想当然。</p>
+
+      <h2>六、还能接着推什么</h2>
+
+      <p>有了卷积，一串经典算法就有了基础：多项式求逆（牛顿迭代，$O(n\log n)$）、多项式除法与取模、多项式 exp 与 log、分治卷积（CDQ 分治配 NTT）、带通配符的字符串匹配。它们的共同点是把一个非线性问题化成若干次乘法，难点从"怎么乘"转到了"怎么把式子整理成能乘的形式"。</p>
+
+      <p>练手顺序建议：先写裸卷积并和 $O(n^2)$ 对拍，再写多项式求逆，最后做一次分治卷积。每次都用随机数据和暴力比对，NTT 的常数与边界问题（长度不足、模数选错、逆变换忘乘 $n^{-1}$）在随机数据上很快就会暴露。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 多项式乘法与 NTT</span>
+      <span>0000000a.html</span>
+    </div>
+  </main>
+</body>
+</html>

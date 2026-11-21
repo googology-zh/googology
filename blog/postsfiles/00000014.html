@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C++ 模板元编程（一）：类型、常量与 SFINAE — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 模板元编程（一）</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000014.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>C++ 模板元编程（一）：类型、常量与 SFINAE</h1>
+      <p class="meta">2026-11-21 · 编号 00000014</p>
+
+      <p>模板元编程（template metaprogramming，下文简称 TMP）指的是把类型和整型常量当作计算对象，在编译期完成选择与计算。它不是语法炫技：真正有用的部分只有两块，一是让编译器替你挑对重载或特化，二是把能在编译期算出的常量提前算掉。代价同样明确——编译时间、实例化数量，以及一旦出错就难以阅读的诊断信息。</p>
+
+      <p>本文假定读者已经会用函数模板和类模板，知道偏特化与可变参数模板的基本写法。涉及的标准以 C++17 为准，C++20 的 concepts 只作对照提及。</p>
+
+      <h2>一、实例化与两阶段名字查找</h2>
+
+      <p>模板不是文本替换。编译器在解析模板定义时只检查与模板参数无关的名字，这称为第一阶段；模板被实例化时，才检查依赖于模板参数的名字，这是第二阶段。由此产生两个后果。</p>
+
+      <p>其一，定义里出现的 <code>T::value_type</code> 这类依赖类型必须加 <code>typename</code>，否则编译器无法判断它是类型还是静态成员：</p>
+
+      <pre><code>template &lt;class T&gt;
+typename T::value_type first(const T &amp;c) {
+    return *c.begin();
+}</code></pre>
+
+      <p>其二，依赖模板名后跟 <code>&lt;</code> 时要加 <code>template</code> 消歧，典型出现在成员模板上：</p>
+
+      <pre><code>template &lt;class Alloc&gt;
+struct Pool {
+    template &lt;class U&gt; struct Rebind { using type = Pool&lt;typename Alloc::template rebind&lt;U&gt;::other&gt;; };
+};</code></pre>
+
+      <p>漏掉这两个关键字时报错位置往往指向一个看似无关的行，因为解析器已经把 <code>&lt;</code> 当成了小于号。</p>
+
+      <h2>二、把常量放进类型</h2>
+
+      <p>类模板的参数可以是类型、整型常量、指针或引用（后两者在 C++17 起对非类型模板参数限制放宽），也可以是模板本身。整型常量进入类型系统后，就能参与编译期计算。最小的例子是阶乘：</p>
+
+      <pre><code>template &lt;int N&gt;
+struct Fact {
+    static constexpr long long value = N * Fact&lt;N - 1&gt;::value;
+};
+
+template &lt;&gt;
+struct Fact&lt;0&gt; { static constexpr long long value = 1; };
+
+static_assert(Fact&lt;10&gt;::value == 3628800);</code></pre>
+
+      <p>主模板负责递推，<code>Fact&lt;0&gt;</code> 的显式特化负责终止。<code>static_assert</code> 让这条计算在编译期就被检查，写错了不会有运行期才发现的机会。斐波那契同理，只是需要两个终止特化：</p>
+
+      <pre><code>template &lt;int N&gt;
+struct Fib {
+    static constexpr long long value = Fib&lt;N - 1&gt;::value + Fib&lt;N - 2&gt;::value;
+};
+template &lt;&gt; struct Fib&lt;0&gt; { static constexpr long long value = 0; };
+template &lt;&gt; struct Fib&lt;1&gt; { static constexpr long long value = 1; };</code></pre>
+
+      <p>这种写法在 C++11 之后已经不是首选。同样的计算用 <code>constexpr</code> 函数即可完成，语法更接近普通代码：</p>
+
+      <pre><code>constexpr long long fact(int n) { return n == 0 ? 1 : n * fact(n - 1); }
+static_assert(fact(10) == 3628800);</code></pre>
+
+      <p>模板递归真正的用途不在算数，而在需要"常量出现在类型里"的场合：数组维度、模板参数、<code>std::integral_constant</code> 的标签。比如一个编译期判断质数的变量模板：</p>
+
+      <pre><code>template &lt;int N, int D&gt;
+struct IsPrimeImpl {
+    static constexpr bool value = (N % D != 0) &amp;&amp; IsPrimeImpl&lt;N, D - 1&gt;::value;
+};
+template &lt;int N&gt;
+struct IsPrimeImpl&lt;N, 1&gt; { static constexpr bool value = true; };
+
+template &lt;int N&gt;
+constexpr bool is_prime_v = (N &gt;= 2) &amp;&amp; IsPrimeImpl&lt;N, (N &gt; 2 ? N - 1 : 1)&gt;::value;
+
+static_assert(is_prime_v&lt;97&gt;);
+static_assert(!is_prime_v&lt;91&gt;);</code></pre>
+
+      <p>变量模板 C++14 起可用。<code>N &gt; 2 ? N - 1 : 1</code> 这个条件不能省，否则 <code>N = 2</code> 时 <code>IsPrimeImpl&lt;2, 1&gt;</code> 没问题，但 <code>N = 1</code> 会实例化 <code>IsPrimeImpl&lt;1, 0&gt;</code>，<code>D</code> 递减到 0 时除以零，直接编译失败。</p>
+
+      <h2>三、SFINAE：替换失败不是错误</h2>
+
+      <p>SFINAE 是 substitution failure is not an error 的缩写：模板参数替换阶段产生的失败，只会让这个候选从重载集中移除，而不是立刻报错。这条规则是编译期"按条件选择重载"的基础。</p>
+
+      <p>关键在于替换失败与实例化失败的界限。函数返回类型、模板参数类型、默认模板参数里的表达式属于替换阶段；函数体、类模板的成员定义属于实例化阶段。后者出错是硬错误，不会被静默移除。</p>
+
+      <p>检测某个类型有没有成员函数 <code>begin</code>，可以用 <code>void_t</code>：</p>
+
+      <pre><code>template &lt;class, class = void&gt;
+struct has_begin : std::false_type {};
+
+template &lt;class T&gt;
+struct has_begin&lt;T, std::void_t&lt;decltype(std::declval&lt;T&gt;().begin())&gt;&gt;
+    : std::true_type {};</code></pre>
+
+      <p>第二个模板参数默认是 <code>void</code>。若 <code>decltype(...)</code> 合法，<code>void_t</code> 把它折叠成 <code>void</code>，偏特化匹配，得到 <code>true_type</code>；若不合法，偏特化在替换阶段失败被丢弃，回落到主模板的 <code>false_type</code>。C++17 之前要手写 <code>template&lt;class...&gt; using void_t = void;</code>，标准库版本对未使用的参数有额外处理，自己写的那版在旧编译器上偶有失效。</p>
+
+      <p>用 <code>enable_if</code> 按条件选择重载，最稳妥的位置是返回类型或模板参数的类型，而不是默认值：</p>
+
+      <pre><code>template &lt;class T&gt;
+std::enable_if_t&lt;std::is_integral_v&lt;T&gt;, T&gt; twice(T x) { return T(x + x); }
+
+template &lt;class T&gt;
+std::enable_if_t&lt;std::is_floating_point_v&lt;T&gt;, T&gt; twice(T x) { return T(x * 2); }</code></pre>
+
+      <p>两条声明在返回类型上不同，替换失败的那条会被移除，调用 <code>twice(3)</code> 与 <code>twice(1.5)</code> 各自命中一条。若把 <code>enable_if</code> 写成 <code>template &lt;class T, std::enable_if_t&lt;...&gt; = 0&gt;</code> 的形式，两个只差默认模板实参的函数模板会被视为同一签名，产生重定义错误。</p>
+
+      <p>C++17 的 <code>if constexpr</code> 能替代一部分 SFINAE。它在函数体内按常量条件丢弃分支，未选中的分支不参与实例化，于是"某个类型没有这个成员就换个写法"可以写在同一函数里，不必再造一个重载。区别是 <code>if constexpr</code> 只能用于函数体内部，无法改变函数的签名，也无法让一个声明在重载集中消失。</p>
+
+      <h2>四、成本与边界</h2>
+
+      <ul>
+        <li>每个不同的模板实参组合都会产生一份独立实例化。类型列表稍长，实例化数量就按组合爆炸，编译时间与目标文件体积同时上涨。</li>
+        <li>模板递归有深度上限，GCC 默认 <code>-ftemplate-depth=900</code>，陡峭的线性递归很容易撞上；改成按二分的递归可以把深度降到对数级。</li>
+        <li>出错信息里模板栈通常有几十层，定位要看最内层的 <code>static_assert</code> 或类型不匹配处，不要从第一行读起。</li>
+        <li>能用 <code>constexpr</code> 函数或 <code>if constexpr</code> 表达的逻辑，不要用类型递归。前者编译更快，诊断更清楚。</li>
+      </ul>
+
+      <p>下一篇处理参数包与类型列表：<code>sizeof...</code> 的位置、折叠表达式、<code>index_sequence</code> 展开，以及这些手段在竞赛代码里到底值不值得用。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 模板元编程（一）</span>
+      <span>00000014.html</span>
+    </div>
+  </main>
+</body>
+</html>

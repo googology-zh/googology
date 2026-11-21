@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动态规划（三）：斜率优化与凸包的维护 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article table {
+    width: 100%;
+    margin: 0 0 14px;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .article th, .article td {
+    padding: 5px 8px;
+    text-align: left;
+    border: 1px solid #dbe8f2;
+  }
+
+  .article th {
+    font-weight: 600;
+    color: #1b4a6b;
+    background: #f1f8fd;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 动态规划（三）</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000006.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>动态规划（三）：斜率优化与凸包的维护</h1>
+      <p class="meta">2026-11-20 · 编号 00000006</p>
+
+      <p>转移式里一旦出现决策变量与阶段变量的乘积，枚举决策就等于在一条直线上找最小值。这类项在分段代价、运输费用、平方误差的题里非常常见，把它整理成一次函数之后，枚举就变成了凸包上的切线查询。</p>
+
+      <h2>一、把转移式整理成一次函数</h2>
+
+      <p>取一个具体形式：</p>
+
+      $$f_i=\min_{j&lt;i}\left(f_j+(S_i-S_j)^2\right)+c_i$$
+
+      <p>其中 $S_i$ 单调不减。展开平方项，把与 $i$ 无关的部分和不含 $j$ 的部分分开：</p>
+
+      $$f_i=S_i^2+c_i+\min_{j&lt;i}\left(f_j+S_j^2-2S_iS_j\right)$$
+
+      <p>括号里是关于 $S_i$ 的一次函数。令 $k=2S_i$、$x_j=S_j$、$y_j=f_j+S_j^2$，要算的就是 $\min_j\,(y_j-kx_j)$，几何上是以斜率 $k$ 的直线去切点集 $\{(x_j,y_j)\}$，切点给出最优决策。</p>
+
+      <p>若点集的下凸壳已知，最小值一定出现在切点，且切点随斜率单调移动。这就是斜率优化这个名字的来历。注意此处的 $k$ 与 $x_j$ 都是整数，比较全程可以用叉积和乘法完成，不需要浮点。</p>
+
+      <h2>二、按数据结构选维护方式</h2>
+
+      <table>
+        <tr><th>横坐标</th><th>查询斜率</th><th>做法</th><th>复杂度</th></tr>
+        <tr><td>单调</td><td>单调</td><td>单调队列，队头弹出</td><td>均摊 $O(1)$ 每次</td></tr>
+        <tr><td>单调</td><td>无序</td><td>凸壳上二分切点</td><td>$O(\log n)$ 每次</td></tr>
+        <tr><td>无序</td><td>无序</td><td>按 $x$ 排序后 CDQ 分治</td><td>$O(n\log n)$ 总</td></tr>
+        <tr><td>无序且需要在线</td><td>任意</td><td>李超线段树</td><td>$O(n\log^2 n)$ 总</td></tr>
+      </table>
+
+      <p>表里的"查询斜率单调"一般由 $S_i$ 单调给出。$S_i$ 是前缀和时几乎总是单调，这也是斜率优化最常见的入口。</p>
+
+      <h2>三、单调队列的实现</h2>
+
+      <p>维护下凸壳。插入点时，若最后三点构成右转或共线，说明中间那个点永远不会成为切点，弹出。查询时，若队首的下一个点比队首更优，弹出队首。</p>
+
+      <pre><code>struct Point { long long x, y; };
+
+long long cross(const Point &amp;o, const Point &amp;a, const Point &amp;b) {
+    return (long long)((__int128)(a.x - o.x) * (b.y - o.y)
+                     - (__int128)(a.y - o.y) * (b.x - o.x));
+}
+
+std::deque&lt;Point&gt; hull;
+
+void add(Point p) {
+    while (hull.size() &gt;= 2 &amp;&amp;
+           cross(hull[hull.size() - 2], hull.back(), p) &lt;= 0)
+        hull.pop_back();
+    hull.push_back(p);
+}
+
+long long query(long long k) {
+    while (hull.size() &gt;= 2) {
+        __int128 lhs = (__int128)(hull[1].y - hull[0].y);
+        __int128 rhs = (__int128)k * (hull[1].x - hull[0].x);
+        if (lhs &lt;= rhs) hull.pop_front();
+        else break;
+    }
+    return hull.front().y - (__int128)k * hull.front().x;
+}</code></pre>
+
+      <p><code>query</code> 返回的是 $y-kx$，量级约为 $|y|+|k||x|$。$k$ 与 $x$ 都在 $10^9$ 附近时，绝对值仍在 64 位有符号数之内，再大就要把返回类型改成 <code>__int128</code>，不能指望隐式转换。上面的弹队首条件对应斜率 $k$ 单调递增、求最小值；$k$ 单调递减时不等号方向相反，或者改从队尾查询。</p>
+
+      <h2>四、精度与相等点</h2>
+
+      <p>全整数时一律用叉积和乘法比较，不要用 <code>double</code> 算斜率。$10^{18}$ 量级的差积在 64 位里会溢出，上面用 <code>__int128</code> 是必要的，代价只是常数大一点。</p>
+
+      <p>横坐标相同的点只保留 $y$ 最小的那个。否则叉积为 $0$，凸壳判据会把有效点误弹掉；查询斜率恰好等于两点连线斜率时，取等号的方向也要统一，避免决策点在两段之间来回跳。</p>
+
+      <p>若代价本身是实数，用 <code>long double</code>，叉积判据加一个相对量级的 eps。此时凸包维护和查询都可能因为误差丢掉正确切点，写完必须对拍，eps 不要凭感觉取。</p>
+
+      <h2>五、几种常见变形</h2>
+
+      <ul>
+        <li>决策代价是线性函数 $w(j,i)=a_jS_i+b_j$：直接套用上面的整理，$x_j$ 与 $y_j$ 换一下即可。</li>
+        <li>距离取绝对值：拆成 $S_i>S_j$ 与 $S_i&lt;S_j$ 两种情况，分别维护上凸壳与下凸壳，查询时各取一次。</li>
+        <li>决策点被限制在窗口 $[i-L,i-1]$ 内：在单调队列基础上加时间戳，队头过期就弹；若窗口内还要二分，则改用可删的凸壳或线段树维护。</li>
+        <li>树上斜率优化：每个节点维护一个凸包，自底向上启发式合并或可并堆合并，查询在合并之前完成，总复杂度 $O(n\log^2 n)$。</li>
+      </ul>
+
+      <h2>六、两道标准题</h2>
+
+      <p>玩具装箱：$f_i=\min_{j&lt;i}\left(f_j+(i-j-1+s_i-s_j-L)^2\right)$，$s$ 为长度前缀和。展开后 $k=2(i+s_i)$ 关于 $i$ 单调，$x_j=j+s_j$ 也单调，单调队列即可，复杂度 $O(n)$。这道题的下标偏移量容易写错，建议先用暴力对拍。</p>
+
+      <p>土地购买：先把矩形按长度排序，把被完全包含的矩形去掉，剩下的宽度单调递减，代价化为 $长_i\times 宽_j$ 的形式，再套斜率优化。去重这一步不做，方程里的代价函数就不满足单调性，优化会失效。</p>
+
+      <p>仓库建设、任务安排、打印文章都属于同一套路：把代价拆开，把含 $i$ 的项提出去，剩下的部分对 $j$ 是线性的。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 动态规划（三）</span>
+      <span>00000006.html</span>
+    </div>
+  </main>
+</body>
+</html>

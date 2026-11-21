@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>可持久化线段树：区间第 k 小与版本回溯 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 可持久化线段树</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000011.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>可持久化线段树：区间第 k 小与版本回溯</h1>
+      <p class="meta">2026-11-21 · 编号 00000011</p>
+
+      <p>可持久化的意思不是"把每个版本都存一份"，而是"修改时不破坏旧版本"：只复制从根到被修改叶子的那条路径，其余节点由新旧版本共享。一次单点修改新增 $O(\log n)$ 个节点，于是所有历史版本可以同时存在。</p>
+
+      <h2>一、区间第 $k$ 小</h2>
+
+      <p>对序列建前缀版本的权值线段树：<code>root[i]</code> 是插入 $a_1,\dots,a_i$ 之后的树。查询 $[l,r]$ 的第 $k$ 小，就把 <code>root[r]</code> 与 <code>root[l-1]</code> 一起从根往下走：左子树里实际落入区间的数的个数，等于两个版本左子树计数之差；若这个差大于等于 $k$，答案在左子树，否则在右子树、$k$ 减去该差。</p>
+
+      <pre><code>int ls[MAXN * 20], rs[MAXN * 20], cnt[MAXN * 20], root[MAXN], tot;
+
+int update(int p, int l, int r, int x) {
+    int q = ++tot;
+    ls[q] = ls[p]; rs[q] = rs[p]; cnt[q] = cnt[p] + 1;
+    if (l == r) return q;
+    int mid = (l + r) &gt;&gt; 1;
+    if (x &lt;= mid) ls[q] = update(ls[p], l, mid, x);
+    else          rs[q] = update(rs[p], mid + 1, r, x);
+    return q;
+}
+
+// 在 (root[l-1], root[r]] 中找第 k 小，值域为 [l, r] 的离散化下标
+int kth(int u, int v, int l, int r, int k) {
+    if (l == r) return l;
+    int mid = (l + r) &gt;&gt; 1;
+    int leftCnt = cnt[ls[v]] - cnt[ls[u]];
+    if (k &lt;= leftCnt) return kth(ls[u], ls[v], l, mid, k);
+    return kth(rs[u], rs[v], mid + 1, r, k - leftCnt);
+}</code></pre>
+
+      <p>节点 0 是一棵空树，<code>ls[0]=rs[0]=cnt[0]=0</code>，于是 <code>root[0]=0</code> 可以直接作为起点，不必单独写建树函数。数组大小按 $(n+m)\log n$ 开，$n=m=10^5$ 时约 $3.6\times10^6$，开 20 倍容易不够，实际要按修改次数的上界乘。</p>
+
+      <p>值域要先离散化：第 $k$ 小返回的是下标，输出时需要映射回原值。若值域很大又不想离散化，把动态开点与可持久化一起用，节点数仍是 $O((n+m)\log V)$。</p>
+
+      <h2>二、单点修改与版本回溯</h2>
+
+      <p>从一个版本 <code>root[t]</code> 出发做修改，返回新的根，旧根不动。这就是"可持久化数组"：每次修改产生一个新版本，查询某个版本某个位置的值时，沿路径走到叶子即可，$O(\log n)$。</p>
+
+      <p>要注意共享节点的不可变性：任何一次修改都不能原地改动 <code>cnt</code> 或子指针，否则旧版本跟着变，整套结构失效。上面的 <code>update</code> 先复制再递归，正是为此。</p>
+
+      <h2>三、树上的第 $k$ 小</h2>
+
+      <p>把前缀版本搬到树上：<code>root[u]</code> 表示从根到 $u$ 路径上的权值线段树，由父亲的版本插入 $val_u$ 得到。查询 $u$ 到 $v$ 路径上的第 $k$ 小，用四个根做差：</p>
+
+      $$cnt=cnt_{root_u}+cnt_{root_v}-cnt_{root_{lca}}-cnt_{root_{fa(lca)}}$$
+
+      <p>这样每条路径的查询是 $O(\log n)$，建树是 $O(n\log n)$。同一套"四根做差"还能处理路径上某值的出现次数。树剖加主席树也能做，但常数更大，除非还要支持修改。</p>
+
+      <h2>四、可持久化并查集</h2>
+
+      <p>把并查集的父亲数组做成可持久化数组，每次合并产生新版本，就得到可持久化并查集。两条限制：不能路径压缩（压缩会改动大量节点，每次操作退化成 $O(n)$），只能按秩或按大小合并；查询时沿父亲链走到根，$O(\log n)$。于是单次操作 $O(\log^2 n)$，空间同样 $O(m\log n)$。</p>
+
+      <p>这类题的价值在于"回到某个历史时刻"，例如按时间加边、查询某时刻两点是否连通。若只需要离线回答，用分治加可回滚并查集（按秩合并 + 栈记录）更省空间，不必上可持久化。</p>
+
+      <h2>五、可持久化 trie</h2>
+
+      <p>同样是前缀版本，把权值线段树换成二进制 trie，就能查询区间内与给定数异或的最大值：从高位往下走，优先选择与当前位相反的分支，用两个版本的计数差判断该分支在区间内是否存在。位数为 30 时每次查询 $O(30)$，比线段树常数更小。</p>
+
+      <h2>六、复杂度与易错点</h2>
+
+      <ul>
+        <li>节点数上界是"修改次数 $\times(\log_2 V+1)$"，修改次数包括建前缀版本与后续更新，不要只按 $n$ 估。</li>
+        <li><code>kth</code> 的递归区间与离散化后的下标必须一致，混用原值与排名是最常见的错误。</li>
+        <li>树上的版本共用同一套节点池，四根做差时下标不能重复使用同一棵树两次。</li>
+        <li>可持久化并查集不要写路径压缩，也不要按"深度"合并后忘记更新深度。</li>
+        <li>多组询问时，<code>tot</code> 归零即可复用节点池，但旧的根必须一并清零，否则会访问到上一组数据的节点。</li>
+      </ul>
+
+      <p>验证方式：随机序列，区间第 $k$ 小与"截取子数组排序"对拍；树上版本与"路径逐点收集后排序"对拍。可持久化结构的错误几乎都是"少复制了一个节点"或"混用了新旧根"，对拍十组就能发现。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 可持久化线段树</span>
+      <span>00000011.html</span>
+    </div>
+  </main>
+</body>
+</html>

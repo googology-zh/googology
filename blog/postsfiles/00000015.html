@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C++ 模板元编程（二）：参数包、类型列表与竞赛中的用法 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 模板元编程（二）</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000015.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>C++ 模板元编程（二）：参数包、类型列表与竞赛中的用法</h1>
+      <p class="meta">2026-11-21 · 编号 00000015</p>
+
+      <p>上一篇把"常量进入类型系统"与 SFINAE 讲完了。这一篇处理可变参数：包怎么展开、类型列表怎么增删查、<code>index_sequence</code> 怎么把包变成下标序列，最后讨论这些手段在竞赛代码里哪些值得用、哪些纯属给自己找麻烦。</p>
+
+      <h2>一、参数包与展开位置</h2>
+
+      <p><code>sizeof...(Ts)</code> 给出包里元素的个数，它是编译期常量，可以直接用在数组维度与 <code>static_assert</code> 里。包的展开只允许出现在少数位置：函数调用的实参列表、模板实参列表、基类列表、花括号初始化列表、<code>using</code> 声明，以及 C++17 的折叠表达式。</p>
+
+      <p>经典的做法是递归剥离第一个参数，直到包为空：</p>
+
+      <pre><code>template &lt;class T&gt;
+void print(const T &amp;x) { std::cout &lt;&lt; x; }
+
+template &lt;class T, class... Rest&gt;
+void print(const T &amp;x, const Rest &amp;...rest) {
+    std::cout &lt;&lt; x &lt;&lt; ' ';
+    print(rest...);
+}</code></pre>
+
+      <p>这里的 <code>rest...</code> 在实参位置展开，每次递归减少一个参数，终止由单参数重载接管。若包里可能为空，还要一个零参数重载兜底，否则 <code>print()</code> 找不到匹配。</p>
+
+      <p>C++17 之后同类需求可以直接用折叠表达式：</p>
+
+      <pre><code>template &lt;class... Ts&gt;
+constexpr auto sum_all(Ts... xs) { return (xs + ... + 0); }
+
+template &lt;class... Ts&gt;
+constexpr std::size_t count_args(Ts &amp;&amp;...) { return sizeof...(Ts); }</code></pre>
+
+      <p><code>(xs + ... + 0)</code> 是二元右折叠，展开成 <code>xs1 + (xs2 + (... + 0))</code>，末尾的 <code>0</code> 让空包也有合法结果。少了它，包为空时表达式非法。同理，用 <code>|| ...</code> 判断"任一类型满足条件"时也必须给初值 <code>false</code>，否则空包直接编译失败。</p>
+
+      <h2>二、类型列表</h2>
+
+      <p>把一组类型装进一个类模板，就有了可以在编译期增删查询的列表：</p>
+
+      <pre><code>template &lt;class... Ts&gt; struct TypeList { static constexpr int size = sizeof...(Ts); };
+
+template &lt;class L&gt; struct ListSize;
+template &lt;class... Ts&gt;
+struct ListSize&lt;TypeList&lt;Ts...&gt;&gt; : std::integral_constant&lt;int, sizeof...(Ts)&gt; {};
+
+template &lt;class L, class T&gt; struct PushFront;
+template &lt;class... Ts, class T&gt;
+struct PushFront&lt;TypeList&lt;Ts...&gt;, T&gt; { using type = TypeList&lt;T, Ts...&gt;; };
+
+template &lt;int I, class L&gt; struct Nth;
+template &lt;class T, class... Ts&gt;
+struct Nth&lt;0, TypeList&lt;T, Ts...&gt;&gt; { using type = T; };
+template &lt;int I, class T, class... Ts&gt;
+struct Nth&lt;I, TypeList&lt;T, Ts...&gt;&gt; : Nth&lt;I - 1, TypeList&lt;Ts...&gt;&gt; {};
+
+template &lt;class T, class L&gt; struct Contains;
+template &lt;class T, class... Ts&gt;
+struct Contains&lt;T, TypeList&lt;Ts...&gt;&gt;
+    : std::bool_constant&lt;(std::is_same_v&lt;T, Ts&gt; || ...)&gt; {};</code></pre>
+
+      <p>几个要点。<code>PushFront</code> 的偏特化把 <code>TypeList&lt;Ts...&gt;</code> 拆开，再拼上 <code>T</code>；<code>Nth</code> 用 <code>I - 1</code> 递归剥离头部，<code>I = 0</code> 时由偏特化取出首元素。<code>Contains</code> 借助折叠表达式一次性比较所有元素，但它在空列表上非法——需要空包特化返回 <code>false_type</code>。</p>
+
+      <p>写成这个形状之后，<code>static_assert</code> 就能把每条性质固定下来：</p>
+
+      <pre><code>using L0 = TypeList&lt;int, double, char&gt;;
+static_assert(ListSize&lt;L0&gt;::value == 3);
+static_assert(std::is_same_v&lt;PushFront&lt;L0, long&gt;::type, TypeList&lt;long, int, double, char&gt;&gt;);
+static_assert(std::is_same_v&lt;Nth&lt;1, L0&gt;::type, double&gt;);
+static_assert(Contains&lt;double, L0&gt;::value);
+static_assert(!Contains&lt;float, L0&gt;::value);</code></pre>
+
+      <p>类型列表的实际价值在于"按类型索引"。运行期的多态要虚函数或函数指针，编译期的分派可以直接由类型在列表中的位置决定。标准库的 <code>std::variant</code> 与 <code>std::visit</code> 就是这套思路的成品，自己搭一套通常只为了少一次间接调用。</p>
+
+      <h2>三、index_sequence 展开</h2>
+
+      <p>有些操作需要的不是类型本身，而是下标：遍历 <code>tuple</code>、批量构造数组、把包映射到另一个包。<code>std::make_index_sequence&lt;N&gt;</code> 生成 <code>0..N-1</code> 的编译期序列，配合逗号折叠就能按顺序展开：</p>
+
+      <pre><code>template &lt;class F, class T, std::size_t... I&gt;
+void for_each_impl(F &amp;&amp;f, T &amp;&amp;t, std::index_sequence&lt;I...&gt;) {
+    (f(std::get&lt;I&gt;(t)), ...);
+}
+
+template &lt;class F, class T&gt;
+void for_each_tuple(F &amp;&amp;f, T &amp;&amp;t) {
+    constexpr std::size_t n = std::tuple_size_v&lt;std::remove_reference_t&lt;T&gt;&gt;;
+    for_each_impl(std::forward&lt;F&gt;(f), std::forward&lt;T&gt;(t), std::make_index_sequence&lt;n&gt;{});</code></pre>
+
+      <p><code>(f(std::get&lt;I&gt;(t)), ...)</code> 是逗号折叠，按 <code>I</code> 递增的顺序逐个求值。逗号运算符保证从左到右，这一点与函数实参的求值顺序不同——后者在 C++17 之前是未指定的，不要指望用实参展开来做有顺序依赖的事。</p>
+
+      <p><code>tuple_size_v</code> 要求类型不是引用，所以先 <code>remove_reference_t</code>；<code>n</code> 声明为 <code>constexpr</code> 才能当模板实参。这两处是这类代码最常见的编译错误来源。</p>
+
+      <h2>四、竞赛里到底用不用</h2>
+
+      <p>结论先说：绝大多数题不需要 TMP。DP、图论、数据结构的常数瓶颈在访存与分支，不在类型分派。真正值得用的场合有三类。</p>
+
+      <p>第一类是把模数做成模板参数。模数成为编译期常量后，编译器可以把取模换成常量除法优化，且不同模数的实例互不干扰：</p>
+
+      <pre><code>template &lt;int MOD&gt;
+struct ModInt {
+    int v;
+    static constexpr int mod = MOD;
+    constexpr ModInt(long long x = 0) : v(int((x % MOD + MOD) % MOD)) {}
+    constexpr ModInt operator+(ModInt o) const { return ModInt(v + o.v); }
+    constexpr ModInt operator*(ModInt o) const { return ModInt(1LL * v * o.v); }
+    constexpr ModInt pow(long long e) const {
+        ModInt r(1), a(*this);
+        while (e) { if (e &amp; 1) r = r * a; a = a * a; e &gt;&gt;= 1; }
+        return r;
+    }
+};</code></pre>
+
+      <p>第二类是消除运行期分派。线段树的合并、并查集的合并若写成 <code>std::function</code>，每次调用都是一次间接跳转；改成模板参数传入函数对象，调用点可内联，常数差一个数量级。</p>
+
+      <p>第三类是用 <code>static_assert</code> 把前提写死。例如预处理了一张质数表，可以断言表长与上界的关系；模板参数写错时在编译期就停下，而不是在评测机上跑到一半越界。</p>
+
+      <p>不值得用的场合同样清楚：为了"优雅"把简单循环写成类型递归，为了少写几个函数而堆 <code>enable_if</code>，以及在需要快速改代码的比赛环境里引入只有自己能看懂的模板层。编译错误一旦出现，模板栈的阅读成本远高于多写两行普通代码。</p>
+
+      <h2>五、易错点</h2>
+
+      <ul>
+        <li>空包上的折叠表达式没有初值，<code>(xs + ...)</code>、<code>(cond || ...)</code> 都会直接失败。</li>
+        <li>递归剥离参数包时忘了零参数终止重载，包为空的那一次调用无匹配。</li>
+        <li><code>sizeof...(Ts)</code> 与 <code>sizeof(Ts)...</code> 是两回事，后者展开成每个类型的大小，语义完全不同。</li>
+        <li>模板定义分散在多个翻译单元时，各处定义必须一致，否则违反 ODR，链接期报重复符号或行为不定。头文件里定义、源文件里只做实例化是常规做法。</li>
+        <li>递归深度受限，线性递归在元素多时撞上限；能二分就二分，能 <code>constexpr</code> 循环就循环。</li>
+      </ul>
+
+      <p>验证方式很直接：所有编译期结论都写成 <code>static_assert</code>，编译通过即证明；运行期行为再用普通断言比对。本文两篇里的代码都在 GCC 16 上以 <code>-std=c++17 -Wall -Wextra</code> 编译过，没有警告。</p>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 模板元编程（二）</span>
+      <span>00000015.html</span>
+    </div>
+  </main>
+</body>
+</html>

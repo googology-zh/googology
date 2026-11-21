@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>最大流最小割与线性规划对偶 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/win7.css">
+<style>
+  .post-win { width: 760px; }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    padding: 7px 9px;
+    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
+    border-bottom: 1px solid #c8dcea;
+  }
+
+  .back-mark {
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid #2f6288;
+  }
+
+  .addressbar {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 23px;
+    min-width: 0;
+    padding: 0 9px;
+    font-size: 11px;
+    color: #2b5473;
+    white-space: nowrap;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #93b1c8;
+    border-radius: 3px;
+    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
+  }
+
+  .addressbar .sep { color: #93aec1; }
+  .addressbar .cur { color: #16496f; font-weight: 600; }
+
+  .article {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 26px 36px 30px;
+    background: #fff;
+  }
+
+  .article h1 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .article h2 {
+    margin: 22px 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #123f60;
+  }
+
+  .meta {
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    font-size: 11px;
+    color: #6c8aa0;
+    border-bottom: 1px solid #e4eef6;
+  }
+
+  .article p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #25455b;
+  }
+
+  .article ul, .article ol {
+    margin: 0 0 12px;
+    padding-left: 22px;
+  }
+
+  .article li {
+    margin-bottom: 5px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #25455b;
+  }
+
+  .article code {
+    padding: 1px 3px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    color: #1c4a6d;
+    background: #f1f8fd;
+    border: 1px solid #dbeaf5;
+    border-radius: 2px;
+  }
+
+  .article pre {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1d3f56;
+    background: #f7fbfe;
+    border: 1px solid #d9e8f3;
+    border-radius: 3px;
+  }
+
+  .article pre code {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+  }
+
+  .article sup { font-size: 10px; }
+
+  .article mjx-container { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+  .article mjx-container[display="true"] { margin: 14px 0; }
+</style>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 最大流最小割与对偶</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000009.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>最大流最小割与线性规划对偶</h1>
+      <p class="meta">2026-11-16 · 编号 00000009</p>
+
+      <p>最大流是少数几个既有组合意义、又能在多项式时间内求解的优化问题。把它写成线性规划，对偶问题恰好是最小割，两个最优值相等这件事可以用残量网络直接构造出来。很多看起来不像网络流的题，都是这一步对偶之后的变形。</p>
+
+      <h2>一、定义与残量网络</h2>
+
+      <p>给定有向网络 $G=(V,E)$，每条边有容量 $c(e)$。流 $f$ 满足 $0\le f(e)\le c(e)$，并且除源点 $s$ 与汇点 $t$ 之外，每个点流入总量等于流出总量。流量定义为从 $s$ 净流出的量。</p>
+
+      <p>残量网络上，每条边保留 $c(e)-f(e)$ 的正向残量与 $f(e)$ 的反向残量。沿残量网络找到一条 $s\to t$ 的路径，即增广路，把路径上的最小残量加到流上，得到的新流仍然可行，流量严格增加。反过来，残量网络上不存在增广路时，流已经是最大流。这两句话合起来是 Ford–Fulkerson 方法，Dinic、ISAP 都是它的具体实现。</p>
+
+      <h2>二、Dinic</h2>
+
+      <p>BFS 给残量网络分层，只允许沿层数递增的边走；DFS 沿层次图推流，用当前弧跳过已经满的边。一次 BFS 之后把所有可能的增广做完，称为一个阻塞流。一般图上的复杂度上界是 $O(n^2m)$，单位容量图上是 $O(m\sqrt m)$。实际运行远快于这个上界，除非数据专门构造。</p>
+
+      <pre><code>struct Edge { int to, nxt; long long cap; };
+int head[MAXN], dep[MAXN], cur[MAXN], ecnt = 1;
+Edge edge[MAXM &lt;&lt; 1];
+
+void add(int u, int v, long long c) {
+    edge[++ecnt] = {v, head[u], c}; head[u] = ecnt;
+    edge[++ecnt] = {u, head[v], 0}; head[v] = ecnt;
+}
+
+bool bfs(int s, int t) {
+    std::memset(dep, -1, sizeof dep);
+    std::queue&lt;int&gt; q;
+    dep[s] = 0; q.push(s);
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int i = head[u]; i; i = edge[i].nxt) {
+            int v = edge[i].to;
+            if (edge[i].cap &gt; 0 &amp;&amp; dep[v] == -1) {
+                dep[v] = dep[u] + 1;
+                q.push(v);
+            }
+        }
+    }
+    return dep[t] != -1;
+}
+
+long long dfs(int u, int t, long long f) {
+    if (u == t) return f;
+    for (int &amp;i = cur[u]; i; i = edge[i].nxt) {
+        int v = edge[i].to;
+        if (edge[i].cap &gt; 0 &amp;&amp; dep[v] == dep[u] + 1) {
+            long long d = dfs(v, t, std::min(f, edge[i].cap));
+            if (d) {
+                edge[i].cap -= d;
+                edge[i ^ 1].cap += d;
+                return d;
+            }
+        }
+    }
+    return 0;
+}
+
+long long dinic(int s, int t) {
+    long long flow = 0;
+    while (bfs(s, t)) {
+        std::memcpy(cur, head, sizeof head);
+        long long d;
+        while ((d = dfs(s, t, LLONG_MAX))) flow += d;
+    }
+    return flow;
+}</code></pre>
+
+      <p><code>ecnt</code> 从 1 开始，保证 <code>i ^ 1</code> 成对；边数组按 $2m$ 开，反向边也算一条。递归深度最大为 $n$，$n$ 上万时要改迭代，或者把栈开大。</p>
+
+      <h2>三、最小割</h2>
+
+      <p>割是把点集分成 $S$（含 $s$）与 $T$（含 $t$）两部分，容量为所有从 $S$ 指向 $T$ 的边的容量之和。任一可行流都不超过任一割：把流量按割的两侧拆开，</p>
+
+      $$|f|=f(S,T)-f(T,S)\le f(S,T)\le c(S,T)$$
+
+      <p>这是弱对偶，方向上只说明最大流不超过最小割。等号由构造给出：取最大流，在残量网络上从 $s$ 出发做可达性标记，令 $S$ 为可达点集。$s\in S$，而 $t\notin S$，否则还存在增广路。所有从 $S$ 到 $T$ 的边必然满流，所有从 $T$ 回 $S$ 的边流量必为 0，于是 $|f|=c(S,T)$。</p>
+
+      <p>这段证明同时给出了读最小割的方法：最大流跑完之后，残量网络上 $s$ 的可达集合就是某个最小割的 $S$ 侧。需要输出割边时，检查每条原边是否从 $S$ 指向 $T$ 且已满流即可。</p>
+
+      <h2>四、几种常见转换</h2>
+
+      <ul>
+        <li>最大权闭合子图：正权点连 $s$、容量为权值；负权点连 $t$、容量为权值的绝对值；原图的依赖边容量为无穷。答案是正权之和减去最小割。无穷边保证依赖关系不会被割断。</li>
+        <li>二分图最小点覆盖：等于最大匹配（König 定理）。构造点覆盖时，在最大匹配的残量网络上从左侧未匹配点出发做交错路可达性，取"可达的左侧点"与"不可达的右侧点"。</li>
+        <li>平面图最小割：建对偶图，把每个面缩成点，跨边的相邻面连边，容量为原边容量，再求 $s$ 到 $t$ 的最短路。网格图是最常见的情形。</li>
+        <li>有源汇上下界可行流：加一条 $t\to s$、容量无穷的边化为无源汇；对每条边拆出下界，按入出度差建超级源 $S'$ 与超级汇 $T'$，跑满流后判断 $S'$ 的出边是否全部满流。求最大流时先去掉附加边，再在原图上继续增广。</li>
+      </ul>
+
+      <h2>五、费用流与势函数</h2>
+
+      <p>带单位费用的最小费用最大流，常规做法是每次沿最短路增广。反向边的费用为负，图里因此存在负权边，只能用 SPFA 或 Bellman–Ford 找最短路，复杂度很依赖数据。</p>
+
+      <p>把势函数引进来可以去掉负权。令 $h_v$ 为上一次增广后源点到 $v$ 的最短路距离，定义约化费用</p>
+
+      $$c'(u,v)=c(u,v)+h_u-h_v$$
+
+      <p>由最短路的最优子结构 $h_v\le h_u+c(u,v)$，可知 $c'(u,v)\ge0$，于是此后每次增广都可以用 Dijkstra，总复杂度 $O(Fm\log n)$，$F$ 为需要增广的次数。第一次没有 $h$ 可用，若原图无负边就直接取 $h=0$，否则先跑一次 SPFA。</p>
+
+      <p>势函数必须在每次增广之后更新，不能只算一次；另外 $h$ 的初值要和增广方向一致，源汇写反是这类代码最常见的错误。</p>
+
+      <h2>六、写题时的细节</h2>
+
+      <ul>
+        <li>容量之和常常超过 32 位，流量、边容量、答案全程 <code>long long</code>。</li>
+        <li>无向边要建两条容量均为 $c$ 的有向边，即调用两次 <code>add</code>；用一条边配双向残量会把残量算反，最小割的结果随之出错。</li>
+        <li>Dinic 的瓶颈通常在 BFS 而不是 DFS，点少边多时不要把优化精力放错地方。</li>
+        <li>点数上万、边数上十万时，静态数组比 <code>vector</code> 更稳；多次建图要在每次之前清空 <code>head</code> 与 <code>ecnt</code>。</li>
+        <li>涉及最小割方案输出时，务必在最大流结束后再做可达性标记，中途标记得到的是某个中间状态的割。</li>
+      </ul>
+    </article>
+
+    <div class="statusbar">
+      <span>博客 — 最大流最小割与对偶</span>
+      <span>00000009.html</span>
+    </div>
+  </main>
+</body>
+</html>
