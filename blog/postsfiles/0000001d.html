@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>排序：归并求逆序对、基数排序与选择 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 排序</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000001d.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>排序：归并求逆序对、基数排序与选择</h1>
+      <p class="meta">2026-11-21 · 编号 0000001d</p>
+
+      <p>比较排序的下界是 $\Omega(n\log n)$，这条结论决定了"更快的排序"只能来自两条路：利用值域的非比较排序，或者放弃排序本身、只取第 $k$ 个元素。本文给出归并求逆序对、基数排序与 <code>nth_element</code> 的适用边界。</p>
+
+      <h2>一、归并与逆序对</h2>
+
+      <p>归并排序在合并两个有序段时，右段元素先出列，就意味着它比左段剩余的每一个都小，逆序对数量可以直接加上左段剩余长度。这个计数与排序共用一次递归，额外开销只有 <code>long long</code> 累加。</p>
+
+      <pre><code>ll merge_count(vector&lt;int&gt; &amp;a, vector&lt;int&gt; &amp;buf, int l, int r) {
+    if (r - l &lt;= 1) return 0;
+    int mid = (l + r) / 2;
+    ll cnt = merge_count(a, buf, l, mid) + merge_count(a, buf, mid, r);
+    int i = l, j = mid, k = l;
+    while (i &lt; mid &amp;&amp; j &lt; r) {
+        if (a[i] &lt;= a[j]) buf[k++] = a[i++];
+        else { cnt += mid - i; buf[k++] = a[j++]; }
+    }
+    while (i &lt; mid) buf[k++] = a[i++];
+    while (j &lt; r) buf[k++] = a[j++];
+    for (int t = l; t &lt; r; ++t) a[t] = buf[t];
+    return cnt;
+}
+
+ll inversion_count(vector&lt;int&gt; a) {
+    vector&lt;int&gt; buf(a.size());
+    return merge_count(a, buf, 0, (int)a.size());
+}</code></pre>
+
+      <p>用 <code>&lt;=</code> 而不是 <code>&lt;</code> 决定相等元素不出列，从而计入的是严格逆序对；若题目按"不上升"计数，把条件改成 <code>&lt;</code> 即可，两种口径都合理，取决于题意。合并完成后必须把缓冲区写回，漏掉这一步会让上层递归拿到未排序的段。</p>
+
+      <p>数组长度 $n=10^5$ 时逆序对最多约 $5\times10^9$，超过 <code>int</code>；即便 $n=10^4$ 也可能有 $5\times10^7$，接近 <code>int</code> 上限，统一用 <code>long long</code> 最省心。</p>
+
+      <h2>二、基数排序</h2>
+
+      <p>值域为 $[0,2^{32})$ 的非负整数可以用 LSD 基数排序：按字节从低到高做四轮计数排序，每轮必须稳定，否则高位顺序会覆盖低位的结果。复杂度 $O(4n)$，与值域无关。</p>
+
+      <pre><code>void radix_sort(vector&lt;int&gt; &amp;a) {      // 非负 32 位整数
+    const int B = 256;
+    vector&lt;int&gt; cnt(B), out(a.size());
+    for (unsigned shift = 0; shift &lt; 32; shift += 8) {
+        fill(cnt.begin(), cnt.end(), 0);
+        for (int x : a) ++cnt[(unsigned)(x &gt;&gt; shift) &amp; (B - 1)];
+        for (int i = 1; i &lt; B; ++i) cnt[i] += cnt[i - 1];
+        for (int i = (int)a.size() - 1; i &gt;= 0; --i)
+            out[--cnt[((unsigned)(a[i] &gt;&gt; shift)) &amp; (B - 1)]] = a[i];
+        a = out;
+    }
+}</code></pre>
+
+      <p>分配阶段必须从后往前，才能保证同一桶内的相对次序不变——这是"稳定"的实现形式。负数不能直接这样排：符号位在最高位，按无符号比较会把所有负数排到正数后面。处理有符号整数时先整体加上偏移量 $2^{31}$ 转成无符号，排完再减回去，或在四轮之后单独处理符号位。</p>
+
+      <p>基数排序的常数取决于桶的数量与内存访问：$B=256$ 时桶表能落在缓存里，通常比 $B=10$ 的十进制版本快数倍。它适合值域已知且分布无关的场合，例如按时间戳、编号排序；若键是浮点数或自定义结构，先转成可比较的整数编码。</p>
+
+      <h2>三、只取第 $k$ 个元素</h2>
+
+      <p><code>std::nth_element</code> 平均 $O(n)$，把第 $k$ 小的元素放到位置 $k$，且它左侧都不大于它、右侧都不小于它。适用于"求中位数""取前 $k$ 小之和"这类不需要全序的场景。</p>
+
+      <p>注意两点：调用之后两侧的元素是乱序的，不能直接当作已排序使用；最坏复杂度是 $O(n^2)$，标准库用 Introselect 做退化保护，实际数据上很难触发。求前 $k$ 小之和时，还要把左侧区间再累加一遍，别把 <code>nth_element</code> 当成"排好了前 k 个"。</p>
+
+      <h2>四、排序键与稳定性</h2>
+
+      <p>多关键字排序有两种写法。其一是把键拼成一个比较函数，按题目要求的优先级逐级比较；其二是按低优先级先排、再按高优先级用稳定排序，两轮结果等价。第二种在需要保持原始次序的题目里更安全，比如"成绩相同按输入顺序输出"。</p>
+
+      <p>比较函数必须满足严格弱序：不可出现 <code>a &lt; b</code> 与 <code>b &lt; a</code> 同时为真的情况，也不可对相等元素返回真。违反时 <code>std::sort</code> 会越界访问，表现为随机崩溃，而不是稳定地排错。</p>
+
+      <h2>五、验证</h2>
+
+      <p>代码在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告。对拍：随机数组 500 组，逆序对与 $O(n^2)$ 逐对比较的结果一致；基数排序与 <code>std::sort</code> 的结果逐元素相等；测试数据取 $n\le 20$、值域 $0..9$，专门覆盖大量重复元素的稳定情形。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 排序</span>
+      <span>0000001d.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

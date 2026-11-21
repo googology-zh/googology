@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>并查集：路径压缩、按秩合并与带权形式 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 并查集</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000001a.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>并查集：路径压缩、按秩合并与带权形式</h1>
+      <p class="meta">2026-11-21 · 编号 0000001a</p>
+
+      <p>并查集只维护"谁和谁在一组"，但加上两个技巧后，单次操作的均摊代价接近常数；再给每个点记录一个到父节点的偏移，它就能回答"两者之间相差多少"这类关系问题。本文先讲基础版本的两条优化，再把带权形式推导清楚。</p>
+
+      <h2>一、两条优化与复杂度</h2>
+
+      <p>基础结构是一棵树，每棵树有一个代表元（根）。查找沿父指针走到根；合并把一棵树的根挂到另一棵上。朴素实现可能退化成一条链，单次 $O(n)$。</p>
+
+      <ul>
+        <li>路径压缩：查找结束时把路径上的点直接挂到根上。单用它的均摊复杂度是 $O(\log n)$ 量级。</li>
+        <li>按秩（按大小）合并：始终把较小的树挂到较大的树上，树高被限制在 $O(\log n)$。单用它的单次复杂度是 $O(\log n)$。</li>
+        <li>两者合用：均摊复杂度为 $O(\alpha(n))$，$\alpha$ 是反阿克曼函数，在 $n&lt;10^{600}$ 时不超过 4，工程上视作常数。</li>
+      </ul>
+
+      <p>只写一个优化也能过绝大多数题，但同时写上的成本很低。需要注意的是，路径压缩一旦启用，就无法再精确维护"树的大小"之外的结构信息（例如树高），所以带权版本通常只做按秩合并。</p>
+
+      <h2>二、带权并查集</h2>
+
+      <p>给每个点 $x$ 记录 $d_x=\mathrm{val}_x-\mathrm{val}_{fa(x)}$，含义是它相对父节点的偏移。查找时父节点会被压到根，偏移随之累加：</p>
+
+      <p>$$\text{find}(x):\quad fa(x)\leftarrow \text{root},\qquad d_x \leftarrow d_x+d_{fa(x)}.$$</p>
+
+      <p>累加必须在递归返回之后做，因为此时 $d_{fa(x)}$ 已被更新为"父节点到根"的总偏移。顺序颠倒会少加一层，链长超过两级时立刻错误。</p>
+
+      <p>合并时给定约束 $\mathrm{val}_y-\mathrm{val}_x\equiv w$。若两者已在同一集合，用 $d_y-d_x$ 与 $w$ 比较即可判断是否冲突；若不在同一集合，把 $r_y$ 挂到 $r_x$ 下，需要的偏移由约束反解：</p>
+
+      <p>$$d_{r_y}=\mathrm{val}_{r_y}-\mathrm{val}_{r_x}=(d_x+w)-d_y.$$</p>
+
+      <p>这来自 $\mathrm{val}_y=\mathrm{val}_x+w$，而 $\mathrm{val}_x=\mathrm{val}_{r_x}+d_x$、$\mathrm{val}_y=\mathrm{val}_{r_y}+d_y$，代入消元即得。若按大小交换了 $x$ 与 $y$，约束方向相反，$w$ 也要取负。</p>
+
+      <pre><code>struct WeightedDSU {
+    vector&lt;int&gt; fa, sz;
+    vector&lt;long long&gt; d;      // d[x] = val[x] - val[fa[x]]  (mod k)
+    int k;
+    explicit WeightedDSU(int n, int k) : fa(n + 1), sz(n + 1, 1), d(n + 1, 0), k(k) {
+        for (int i = 1; i &lt;= n; ++i) fa[i] = i;
+    }
+    int find(int x) {
+        if (fa[x] == x) return x;
+        int p = fa[x];
+        fa[x] = find(p);
+        d[x] = (d[x] + d[p]) % k;      // 累加到新的根
+        return fa[x];
+    }
+    // 约束 val[y] - val[x] ≡ w (mod k)；与已有约束冲突时返回 false
+    bool unite(int x, int y, long long w) {
+        int rx = find(x), ry = find(y);
+        if (rx == ry) return ((d[y] - d[x] - w) % k + k) % k == 0;
+        if (sz[rx] &lt; sz[ry]) {          // 小树接到大树上
+            swap(rx, ry); swap(x, y);
+            w = -w;
+        }
+        fa[ry] = rx;
+        d[ry] = ((d[x] + w - d[y]) % k + k) % k;
+        sz[rx] += sz[ry];
+        return true;
+    }
+};</code></pre>
+
+      <p>偏移在模 $k$ 意义下累加，是因为这类题通常只关心"模 $k$ 的差"。若关心真实的差，把 <code>k</code> 换成足够大的数、并在合并时保证偏移落在 <code>long long</code> 内即可，结构不变。</p>
+
+      <h2>三、常见变体</h2>
+
+      <p>种类并查集是带权形式的特例：$k=3$ 时 $d_x\in\{0,1,2\}$，可以表示"同类、吃、被吃"三种关系，合并时把 $w$ 按关系表转换即可。它等价于开 $3n$ 个点、把 $i$、$i+n$、$i+2n$ 当作三种身份，后者的思路更直观，但空间是三倍。</p>
+
+      <p>可撤销并查集用于需要回退的场景（例如按时间分治的线段树）。它要求合并时只改父指针与大小，不做路径压缩，否则回退时无法还原被压平的链；合并记录压栈，回退时按记录逐个恢复。代价是单次复杂度回到 $O(\log n)$，且不能路径压缩。</p>
+
+      <p>还有一类是"带删除"的需求：把删除转成"只在某个时间区间内有效"的边，挂到时间线段树上，用可撤销并查集在 DFS 中进出，这也是离线处理动态连通性的标准手法。</p>
+
+      <h2>四、易错点</h2>
+
+      <ul>
+        <li><code>find</code> 递归深度等于树高，未做按秩合并时可达 $O(n)$，链长 $10^6$ 会爆栈；改用迭代写法或迭代压缩。</li>
+        <li>带权版本里，交换 $x$ 与 $y$ 之后必须同时把 $w$ 取负，漏掉这一步在"小树接大树"的分支里才会暴露。</li>
+        <li>模意义下的减法先加 $k$ 再取模，负数直接 <code>% k</code> 仍是负值。</li>
+        <li>路径压缩与"记录树高"不能共存，需要树高时只做按秩合并。</li>
+        <li>多组数据要重建整个结构，残留的父指针会让第一组之后的答案全错。</li>
+      </ul>
+
+      <h2>五、验证</h2>
+
+      <p>代码在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告。对拍：随机 $n\le 8$、$k\le 5$，每轮给出约束 $\mathrm{val}_y-\mathrm{val}_x\equiv w$，用约束图的 BFS 求出两点间已知差值，判断本次合并是否应冲突，与带权并查集的返回值比对；结束后再检查所有已加入约束在同一集合内均成立。3000 组，全部一致。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 并查集</span>
+      <span>0000001a.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

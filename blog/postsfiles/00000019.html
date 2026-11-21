@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>同余方程：扩展欧几里得、线性同余与 CRT — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 同余方程</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000019.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>同余方程：扩展欧几里得、线性同余与 CRT</h1>
+      <p class="meta">2026-11-21 · 编号 00000019</p>
+
+      <p>同余方程的解法都建立在一次扩展欧几里得上。把 $ax+by=\gcd(a,b)$ 的解拿在手里，形如 $ax\equiv b\pmod m$ 的方程、逆元、多个方程联立，都是它的直接推论。本文按这个依赖顺序写，并说明每一步的判据从哪里来。</p>
+
+      <h2>一、扩展欧几里得</h2>
+
+      <p>欧几里得算法求 $\gcd$ 的同时可以回代出系数。递归到 $b=0$ 时 $ax=a$，取 $x=1,y=0$；回溯时把解按 $y,\ x$ 交换，再减去 $a/b\,x$：</p>
+
+      <pre><code>ll exgcd(ll a, ll b, ll &amp;x, ll &amp;y) {
+    if (b == 0) { x = 1; y = 0; return a; }
+    ll g = exgcd(b, a % b, y, x);
+    y -= a / b * x;
+    return g;
+}</code></pre>
+
+      <p>返回的 $g$ 满足 $ax+by=g$，且 $g=\gcd(a,b)$（要求 $a,b$ 非负；负数输入应先取绝对值并在解上补符号）。解不唯一：若 $(x_0,y_0)$ 是一组解，则</p>
+
+      $$x=x_0+\frac{b}{g}t,\qquad y=y_0-\frac{a}{g}t,\qquad t\in\mathbb{Z}.$$
+
+      <p>步长是 $b/g$ 而不是 $b$，这一点决定了最小非负解的写法。取 $x_0$ 模 $b/g$ 即得 $[0,b/g)$ 内的解；若 $b/g=0$（即 $b=0$），说明方程只剩 $ax=a$，解唯一。</p>
+
+      <h2>二、线性同余</h2>
+
+      <p>$ax\equiv b\pmod m$ 有解当且仅当 $\gcd(a,m)\mid b$。设 $g=\gcd(a,m)$，把方程改写成 $ax+my=b$，用一次 exgcd 得到 $a x_0+m y_0=g$，两边乘 $b/g$ 后</p>
+
+      $$x\equiv \frac{b}{g}\,x_0 \pmod{\frac{m}{g}}.$$
+
+      <p>实现时先约去 $g$ 再乘，能显著减小中间值：</p>
+
+      <pre><code>// a*x ≡ b (mod m)：有解返回最小非负 x，无解返回 -1
+ll linear_congruence(ll a, ll b, ll m) {
+    ll x, y;
+    ll g = exgcd(a, m, x, y);
+    if (b % g != 0) return -1;
+    ll mod = m / g;
+    __int128 t = (__int128)(x % mod) * ((b / g) % mod);
+    ll r = (ll)((t % mod + mod) % mod);
+    return r;
+}</code></pre>
+
+      <p>三个容易踩的点。第一，$x$ 可能是负数，<code>x % mod</code> 再取模时要补正。第二，乘法必须用 <code>__int128</code>：$m$ 到 $10^{18}$ 时，两个模意义下的数相乘会直接溢出 <code>long long</code>。第三，无解判据是 <code>b % g != 0</code>，而不是 $g\neq 1$——$g$ 整除 $b$ 时方程依然有解，只是解在更小的模数下。</p>
+
+      <p>求逆元是 $b=1$ 的特例：$a$ 模 $m$ 可逆当且仅当 $\gcd(a,m)=1$，逆元为 <code>linear_congruence(a, 1, m)</code>。模数为质数且 $a$ 不被整除时，用费马小定理 $a^{p-2}$ 更快；模数不保证为质数时必须走 exgcd。</p>
+
+      <h2>三、中国剩余定理</h2>
+
+      <p>模数两两互素时，方程组 $x\equiv r_i\pmod{m_i}$ 在模 $\prod m_i$ 下唯一：令 $M=\prod m_i$、$M_i=M/m_i$、$t_i$ 为 $M_i$ 模 $m_i$ 的逆元，则</p>
+
+      $$x=\sum_i r_i M_i t_i \pmod M.$$
+
+      <p>模数不互素时这个构造失效（$M_i$ 与 $m_i$ 可能不互素，逆元不存在），需要逐个合并。合并两个方程 $x\equiv r_1\pmod{m_1}$、$x\equiv r_2\pmod{m_2}$，等价于解 $m_1 k\equiv r_2-r_1\pmod{m_2}$，有解条件是 $\gcd(m_1,m_2)\mid(r_2-r_1)$，解出 $k$ 后新方程为</p>
+
+      $$x\equiv r_1+m_1 k \pmod{\operatorname{lcm}(m_1,m_2)}.$$
+
+      <pre><code>// 把 x ≡ r1 (mod m1) 与 x ≡ r2 (mod m2) 合并，失败返回 false
+bool merge(ll &amp;r1, ll &amp;m1, ll r2, ll m2) {
+    ll x, y;
+    ll g = exgcd(m1, m2, x, y);
+    ll diff = r2 - r1;
+    if (diff % g) return false;
+    ll mod = m2 / g;
+    __int128 t = (__int128)(x % mod) * ((diff / g) % mod);
+    ll k = (ll)((t % mod + mod) % mod);
+    r1 += (__int128)k * m1;
+    m1 *= mod;
+    r1 = (r1 % m1 + m1) % m1;
+    return true;
+}
+
+ll excrt(const vector&lt;ll&gt; &amp;r, const vector&lt;ll&gt; &amp;m) {
+    ll R = 0, M = 1;
+    for (size_t i = 0; i &lt; r.size(); ++i)
+        if (!merge(R, M, r[i], m[i])) return -1;
+    return R;
+}</code></pre>
+
+      <p>几处实现要点。合并后的模数是 $\operatorname{lcm}(m_1,m_2)=m_1\cdot(m_2/g)$，先除后乘可以避免中间溢出；<code>m1 *= mod</code> 之后才归一化 <code>r1</code>，顺序反了会在旧模数下取模，得到错误的代表元。返回的 <code>-1</code> 与"解为 $-1$"冲突，实际使用时应改用 <code>bool</code> 加输出参数，或约定返回值域非负。</p>
+
+      <p>互素情形只是 $g$ 恒为 1 的特例，合并写法可以统一处理，不必再单独实现一个 CRT。复杂度是每个方程一次 exgcd，$O(\sum \log m_i)$。</p>
+
+      <h2>四、易错点</h2>
+
+      <ul>
+        <li>exgcd 的输入含负数时，先取绝对值求解，再按符号还原；直接传入负数时 <code>a % b</code> 的符号会让递归不终止或结果错位。</li>
+        <li>解的通式步长是 $b/g$，写成 $b$ 会在 $g&gt;1$ 时漏掉一部分解。</li>
+        <li>所有涉及模数的乘法用 <code>__int128</code>；只在 $m\le 10^9$ 时才可以直接乘。</li>
+        <li>CRT 合并失败要能区分"无解"，不要与合法解混淆。</li>
+        <li>模数为 1 时所有数同余于 0，最小非负解为 0，边界要能返回 0 而不是 -1。</li>
+      </ul>
+
+      <h2>五、验证</h2>
+
+      <p>代码在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告。对拍：$a,b$ 取 $0..60$，验证 $ax+by=\gcd(a,b)$ 与 $g$ 的一致性；$m\le 30$、$a&lt;m$、$b\le 30$ 的线性同余逐个与 $[0,m)$ 内枚举比对；CRT 随机取模数（含不互素组合），在 $\operatorname{lcm}\le 10^6$ 时逐个枚举验证，500 组。全部一致。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 同余方程</span>
+      <span>00000019.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

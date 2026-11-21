@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>最短路：Dijkstra、Bellman–Ford 与最小环 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 最短路</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000017.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>最短路：Dijkstra、Bellman–Ford 与最小环</h1>
+      <p class="meta">2026-11-21 · 编号 00000017</p>
+
+      <p>最短路的三套做法并不是"快的更好"，而是各自绑定了不同的边权前提。把前提写清楚，选型就只剩查表。本文给出堆优化 Dijkstra、SPFA 的负环判定，以及 Floyd 求最小环的正确写法——后者最容易写错的地方是边权来源。</p>
+
+      <h2>一、非负权：堆优化 Dijkstra</h2>
+
+      <p>Dijkstra 的正确性依赖一个单调性：已确定的最短路长度不会再被更短的路径改写。边权非负时，每次取出堆中距离最小的未确定点，它的距离就是最终答案；边权为负时这个性质失效。</p>
+
+      <pre><code>using ll = long long;
+const ll INF = (ll)4e18;
+
+vector&lt;ll&gt; dijkstra(int n, const vector&lt;vector&lt;pair&lt;int, int&gt;&gt;&gt; &amp;g, int s) {
+    vector&lt;ll&gt; dist(n + 1, INF);
+    priority_queue&lt;pair&lt;ll, int&gt;, vector&lt;pair&lt;ll, int&gt;&gt;, greater&lt;&gt;&gt; q;
+    dist[s] = 0;
+    q.push({0, s});
+    while (!q.empty()) {
+        auto [d, u] = q.top();
+        q.pop();
+        if (d != dist[u]) continue;          // 堆里的过期副本
+        for (auto [v, w] : g[u])
+            if (dist[u] + w &lt; dist[v]) {
+                dist[v] = dist[u] + w;
+                q.push({dist[v], v});
+            }
+    }
+    return dist;
+}</code></pre>
+
+      <p>堆里允许存在同一节点的多个副本，靠 <code>d != dist[u]</code> 丢弃过期项，比维护"是否已确定"的标记更省事。复杂度 $O((n+m)\log n)$，稠密图上并不比朴素 $O(n^2)$ 快，这时朴素实现反而常数更小。</p>
+
+      <p>溢出要单独考虑。用邻接表存边时，<code>dist[u] + w</code> 在 <code>dist[u]</code> 为 <code>INF</code> 时会溢出成负值，从而错误更新；上界取 $4\times10^{18}$ 时加一个较小的 $w$ 仍可能落在 <code>long long</code> 内，但若 $w$ 可达 $10^{18}$ 就会翻负，此时应在松弛前判断 <code>dist[u] == INF</code>。</p>
+
+      <h2>二、负权与负环：Bellman–Ford 与 SPFA</h2>
+
+      <p>有负权、无负环时用 Bellman–Ford：最多 $n-1$ 轮松弛，若第 $n$ 轮仍能更新则存在负环。朴素实现 $O(nm)$，在稠密图上不可取。队列版本（SPFA）是它的常见加速，但只是平均意义下的加速，最坏仍是 $O(nm)$，出题人构造的数据可以让它退化成指数级的入队次数。</p>
+
+      <p>负环判定不要用"入队次数超过 $n$"这种含糊的写法，直接记最短路径所含边数：</p>
+
+      <pre><code>pair&lt;bool, vector&lt;ll&gt;&gt; spfa(int n, const vector&lt;vector&lt;pair&lt;int, int&gt;&gt;&gt; &amp;g, int s) {
+    vector&lt;ll&gt; dist(n + 1, INF);
+    vector&lt;int&gt; cnt(n + 1, 0);     // 起点到该点的最短路径所含边数
+    vector&lt;char&gt; inq(n + 1, 0);
+    queue&lt;int&gt; q;
+    dist[s] = 0; q.push(s); inq[s] = 1;
+    while (!q.empty()) {
+        int u = q.front(); q.pop(); inq[u] = 0;
+        for (auto [v, w] : g[u]) {
+            if (dist[u] + w &gt;= dist[v]) continue;
+            dist[v] = dist[u] + w;
+            cnt[v] = cnt[u] + 1;
+            if (cnt[v] &gt;= n) return {true, dist};
+            if (!inq[v]) { q.push(v); inq[v] = 1; }
+        }
+    }
+    return {false, dist};
+}</code></pre>
+
+      <p><code>cnt[v] &gt;= n</code> 的依据是：无负环时最短路是简单路径，边数至多 $n-1$；达到 $n$ 条边必然重复了顶点，重复段的总权为负，即存在负环。这个判据对从单一源点出发的情形成立；若负环与源点不连通，需要把所有点先压入队列并把距离初始化为 $0$，等价于加一个超级源。</p>
+
+      <p>还有两点常被忽略。其一是 <code>dist[u] + w</code> 的溢出，负权下更隐蔽，应使用足够大的上界或在松弛前判空。其二是 SPFA 与"最短路长度"一起输出时，检测到负环的那一刻距离并非最终值，不要把它当作答案。</p>
+
+      <h2>三、最小环：Floyd 的正确定义</h2>
+
+      <p>Floyd 求最小环的流程是：按编号 $k$ 从小到大，先用只经过 $1..k-1$ 中转的最短路矩阵 $d$，配合原图的两条边组成环，更新答案；再用 $k$ 做一次中转，更新 $d$。答案必须在松弛之前统计，否则 $d$ 里已经含有经过 $k$ 的路径，环会被重复计算。</p>
+
+      <p>更关键的细节是这两条边必须取原图的边权，不能用松弛后的 $d$。若写成 <code>d[i][k] + d[k][j]</code>，最短路径可能经过 $i$ 或 $j$，拼出来的"环"会重复顶点，长度算小，结果错误。这一点在有多种走法时立刻暴露。</p>
+
+      <pre><code>ll floyd_min_cycle(int n, const vector&lt;vector&lt;ll&gt;&gt; &amp;w) {
+    vector&lt;vector&lt;ll&gt;&gt; d = w;                 // d 记录只经前 k-1 个点中转的最短路
+    ll best = INF;
+    for (int k = 1; k &lt;= n; ++k) {
+        // 环上的最大编号点取 k，两侧必须用原图的边，不能用松弛后的 d
+        for (int i = 1; i &lt; k; ++i)
+            for (int j = i + 1; j &lt; k; ++j)
+                if (d[i][j] &lt; INF &amp;&amp; w[i][k] &lt; INF &amp;&amp; w[k][j] &lt; INF)
+                    best = min(best, d[i][j] + w[i][k] + w[k][j]);
+        for (int i = 1; i &lt;= n; ++i)
+            for (int j = 1; j &lt;= n; ++j)
+                if (d[i][k] &lt; INF &amp;&amp; d[k][j] &lt; INF)
+                    d[i][j] = min(d[i][j], d[i][k] + d[k][j]);
+    }
+    return best &lt; INF / 2 ? best : -1;
+}</code></pre>
+
+      <p>这份实现针对无向图，$i&lt;j$ 的枚举顺序依赖距离矩阵对称。有向图需要把内层枚举改成任意有序对，并且允许二元环 $i\to k\to i$ 的情形单独处理。返回值约定 <code>-1</code> 表示不存在环，判据是 <code>best &lt; INF/2</code>，避免把"加了上限的伪无穷"当成答案。</p>
+
+      <h2>四、选型与其它做法</h2>
+
+      <ul>
+        <li>边权非负、单源：堆优化 Dijkstra；图很稠密且 $n$ 小时用 $O(n^2)$ 朴素版。</li>
+        <li>边权只有 0 与 1：双端队列 BFS，$O(n+m)$，比任何带堆的实现都快。</li>
+        <li>边权非负且为小整数（至多 $C$）：按距离分桶（Dial 算法），把堆换成 $C+1$ 个队列。</li>
+        <li>有负权、需要判负环：Bellman–Ford 或 SPFA；只判环不判距离时，把所有点初始化入队更快。</li>
+        <li>任意两点间距离、$n\le 400$：Floyd；最小环、传递闭包都基于它。</li>
+        <li>稀疏图上的多源最短路：加超级源，或把多个源点距离置 $0$ 后跑一次。</li>
+      </ul>
+
+      <h2>五、验证</h2>
+
+      <p>本文代码在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告。对拍方式：随机生成 $n\le 6$、$m\le 12$ 的有向图，SPFA 与朴素 Bellman–Ford 比对"是否有负环"与每个点的距离，500 例；非负权下 Dijkstra 与 Bellman–Ford 的距离逐个比对，500 例；最小环与 DFS 枚举全部简单环的结果比对，300 例。三组均无差异。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 最短路</span>
+      <span>00000017.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>哈希：字符串哈希、模数选择与防碰撞 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 哈希</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000001e.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>哈希：字符串哈希、模数选择与防碰撞</h1>
+      <p class="meta">2026-11-21 · 编号 0000001e</p>
+
+      <p>哈希把"比较子串"降为"比较两个整数"，代价是存在碰撞。工程上要做的不是消灭碰撞，而是把概率压到题目数据无法构造的水平：双模数、随机底数，再加上必要时回退到逐字符验证。</p>
+
+      <h2>一、多项式哈希</h2>
+
+      <p>把字符串看成以 $B$ 为底的多项式，字符映射到正整数权值，前缀哈希与幂次同步递推。子串哈希由两个前缀做差得到：</p>
+
+      <p>$$H(l,r)=H(r)-H(l)\cdot B^{\,r-l}.$$</p>
+
+      <p>实现时统一按 $[l,r)$ 取区间，与 <code>string::compare</code> 的参数习惯一致，能减少下标换算错误：</p>
+
+      <pre><code>struct StrHash {
+    static constexpr long long M1 = 1000000007, M2 = 1000000009, B = 131;
+    int n;
+    vector&lt;long long&gt; h1, h2, p1, p2;
+    explicit StrHash(const string &amp;s) : n((int)s.size()), h1(n + 1), h2(n + 1), p1(n + 1, 1), p2(n + 1, 1) {
+        for (int i = 0; i &lt; n; ++i) {
+            long long c = s[i] - 'a' + 1;
+            h1[i + 1] = (h1[i] * B + c) % M1;
+            h2[i + 1] = (h2[i] * B + c) % M2;
+            p1[i + 1] = p1[i] * B % M1;
+            p2[i + 1] = p2[i] * B % M2;
+        }
+    }
+    pair&lt;long long, long long&gt; get(int l, int r) const {   // 区间 [l, r) 的哈希
+        long long a = (h1[r] - h1[l] * p1[r - l]) % M1; if (a &lt; 0) a += M1;
+        long long b = (h2[r] - h2[l] * p2[r - l]) % M2; if (b &lt; 0) b += M2;
+        return {a, b};
+    }
+    bool equal(int l1, int r1, int l2, int r2) const {
+        return r1 - l1 == r2 - l2 &amp;&amp; get(l1, r1) == get(l2, r2);
+    }
+};</code></pre>
+
+      <p>几个实现细节。字符权值从 $1$ 开始，避免首字符为 $0$ 时与空串混淆；减法后统一补正，C++ 的 <code>%</code> 对负数返回负值；<code>p</code> 数组初值为 $1$，<code>p[0]=1</code> 是递推基；<code>equal</code> 先比长度，否则不同长度也可能得到相同哈希——这条检查不是优化，是正确性的一部分。</p>
+
+      <h2>二、模数与底数的选择</h2>
+
+      <p>单个 $10^9$ 级模数在随机数据上碰撞概率约为 $1/M$，看似可忽略，但出题人可以构造反例：底数固定、模数公开时，存在长度约 $\sqrt{M}$ 的碰撞串（生日攻击思路），足以让针对性的数据卡掉单哈希。</p>
+
+      <p>可行的加固方式按成本排序：</p>
+
+      <ul>
+        <li>双模数：两个互素的 $10^9$ 级质数联合，碰撞概率降到 $10^{-18}$ 量级，本文采用这一种。</li>
+        <li>随机底数：运行时取一个与字符集互素的随机 $B$，使攻击者无法预设碰撞串；配合双模数基本安全。</li>
+        <li>自然溢出（<code>unsigned long long</code>）：省去取模，速度最快，但模数是 $2^{64}$，存在著名的 Thue–Morse 构造可以卡掉固定底数，正式比赛不建议单独使用。</li>
+        <li>比较时验证：定位到可疑位置后逐字符比较，把误判概率降为零，代价是常数变大。</li>
+      </ul>
+
+      <p>底数不宜过小。$B=26$ 或 $B=27$ 会让短串的哈希分布过于集中；$131$、$13331$ 之类的经验值来自实测的冲突率，本质要求是 $B$ 大于字符集大小且与模数互素。</p>
+
+      <h2>三、树哈希</h2>
+
+      <p>无根树的同构判定用括号序列或子节点哈希排序。常用做法是以每个点为根各算一次，或先求重心/中心作为根，再自底向上把子节点的哈希值排序后拼接，最后套一层多项式哈希。核心要求是"可交换"：子节点顺序不影响结果，因此必须先排序再合并，直接按遍历顺序累加会把同构树判成不同。</p>
+
+      <p>比较两棵树时，无根树要在重心处对齐：一棵树至多两个重心，取两者中哈希较小（或按字典序）的那个作为代表元。只比一个重心可能漏掉同构，尤其是双重心结构。</p>
+
+      <h2>四、与其它结构的取舍</h2>
+
+      <p>哈希适合"判定相等"而不适合"求排名"：需要按字典序比较子串时，哈希配合二分可以做到 $O(\log n)$ 比较，但常数远高于后缀数组的 $O(1)$ LCP。需要统计不同子串数量、求最长重复子串时，后缀自动机或后缀数组更稳，且没有碰撞风险。</p>
+
+      <p>另一类用法是把哈希当作键放进 <code>unordered_map</code>：单哈希的碰撞会直接变成"两个不同状态被合并"，这类错误比子串误判更难查，务必使用双哈希并把两个值拼成一个 64 位键。</p>
+
+      <h2>五、验证</h2>
+
+      <p>代码在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告。对拍：随机字符串 300 组，每组随机取 40 对等长子串，比较哈希判定与 <code>string::compare</code> 的真实结果，必须完全一致。这只验证实现正确，碰撞概率仍由模数与底数决定，不能由测试证明。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 哈希</span>
+      <span>0000001e.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

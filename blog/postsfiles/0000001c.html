@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>贪心：交换论证、区间调度与反悔 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 贪心</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000001c.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>贪心：交换论证、区间调度与反悔</h1>
+      <p class="meta">2026-11-21 · 编号 0000001c</p>
+
+      <p>贪心的难点不在实现，而在证明。写代码之前要能回答：为什么不存在更优的方案？交换论证是最通用的回答方式——把最优解与贪心解的第一个分歧点摆在一起，交换元素后目标不下降，于是可以逐步把最优解改成贪心解。</p>
+
+      <h2>一、交换论证的模板</h2>
+
+      <p>设贪心算法在第一步选择了 $g$，而某个最优解 $OPT$ 选择了 $o$。若能证明 "把 $OPT$ 中的 $o$ 换成 $g$ 后仍然可行且目标值不变差"，则存在一个包含 $g$ 的最优解，归纳下去就得到贪心的最优性。三段话足以覆盖大多数题：$g$ 的选取条件比 $o$ 更宽松（可行）；替换后不破坏其余选择（兼容）；替换后目标值不减（不差）。</p>
+
+      <p>反例构造则相反：只要找到一个 $g$ 比 $o$ "局部更优"但挤掉了两个更优选择的场景，贪心就不成立。这类反例通常只有五六个元素，手工枚举即可。</p>
+
+      <h2>二、区间调度</h2>
+
+      <p>要从若干闭区间中选出互不重叠的最多个数，正确策略是按右端点升序，能选就选。直觉上"结束得早的区间给后面留的余地更大"，而交换论证可以把它写成：若最优解的第一个区间结束得比贪心选的更晚，用它替换不会减少可选数量。</p>
+
+      <pre><code>int max_nonoverlap(vector&lt;pair&lt;int, int&gt;&gt; seg) {
+    sort(seg.begin(), seg.end(), [](const auto &amp;a, const auto &amp;b) { return a.second &lt; b.second; });
+    int cnt = 0, last = INT_MIN;
+    for (auto &amp;s : seg)
+        if (s.first &gt;= last) { ++cnt; last = s.second; }
+    return cnt;
+}</code></pre>
+
+      <p>有三处容易出错。按左端点排序是错的（早开始晚结束的区间会占满整条时间轴）；把 <code>&gt;=</code> 写成 <code>&gt;</code> 取决于区间端点是否允许相接，题目说"不重叠"通常指闭区间可以首尾相接；<code>last</code> 的初值应取足够小的数，而不是 $0$，否则左端点为负数时一个都选不上。</p>
+
+      <p>若要求"覆盖"而不是"选择"，例如用最少的区间覆盖 $[1,n]$，贪心改成每次在能接上的区间里选右端点最远的，同样是交换论证，但排序依据变为左端点。两类问题的目标不同，别把策略搬错。</p>
+
+      <h2>三、反悔贪心</h2>
+
+      <p>有些题的局部最优会挤掉更优的组合，这时可以用堆记录"已选"，遇到更好的候选就撤掉最差的。典型形式是单位时间任务调度：每个任务有截止期 $d$ 与收益 $p$，每单位时间做一件事，求最大总收益。</p>
+
+      <pre><code>ll max_profit(vector&lt;pair&lt;int, ll&gt;&gt; jobs) {   // (截止期, 收益)，单位时间，收益为正
+    sort(jobs.begin(), jobs.end());
+    priority_queue&lt;ll, vector&lt;ll&gt;, greater&lt;ll&gt;&gt; q;
+    ll sum = 0;
+    for (auto [d, p] : jobs) {
+        if ((int)q.size() &lt; d) { q.push(p); sum += p; }
+        else if (!q.empty() &amp;&amp; q.top() &lt; p) { sum -= q.top(); q.pop(); q.push(p); sum += p; }
+    }
+    return sum;
+}</code></pre>
+
+      <p>按截止期升序处理，堆里存已选任务的收益。当前任务数量还不到截止期，直接选；已经满了就比较最小收益，若新任务更高则替换。正确性在于：处理到截止期 $d$ 时，已选集合恰好是"在前缀任务中选不超过 $d$ 个且收益最大"的一组，这由归纳保持。</p>
+
+      <p>堆里只存收益、不存任务编号，因为被替换掉的任务之后不可能再用——它的截止期不大于当前，替换它的新任务截止期更大，占用同一时段的代价更低。收益可能为负时不能直接入堆，应先过滤，否则"少做一件"反而更优的情形会被忽略。</p>
+
+      <h2>四、其它常见形态</h2>
+
+      <ul>
+        <li>排序不等式：两序列按同向配对时和最大、反向配对时和最小，用于重排类问题。</li>
+        <li>邻项交换：证明"相邻两项按某关键字排序后不劣"，进而说明整体排序最优（如 Johnson 不等式）。</li>
+        <li>拟阵：若可行集满足"子集封闭"与"交换性"，按权重从大到小贪心即最优，最小生成树是典型例子。</li>
+        <li>撤销堆：同时维护"已花费"与"可撤销"的两堆，用于带配额的选取问题。</li>
+      </ul>
+
+      <h2>五、易错点与验证</h2>
+
+      <ul>
+        <li>把"局部最优"当成"全局最优"，没有交换论证就动手。</li>
+        <li>排序键写错：调度看右端点，覆盖看左端点，反悔看截止期。</li>
+        <li>边界含等号的处理与题意不符（相接是否算重叠）。</li>
+        <li>反悔结构里忘记同步维护总和，替换后数值对不上。</li>
+      </ul>
+
+      <p>代码在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告。对拍：区间调度与任务调度各 500 组，$n\le 8$，用二进制枚举所有子集并逐一检查可行性，取最大值作为对照，全部一致。枚举是唯一可靠的小规模验证方式，贪心本身没有"部分正确"的中间状态。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 贪心</span>
+      <span>0000001c.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

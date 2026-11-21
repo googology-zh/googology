@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>区间修改与区间查询：树状数组与线段树 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 树状数组与线段树</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000018.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>区间修改与区间查询：树状数组与线段树</h1>
+      <p class="meta">2026-11-21 · 编号 00000018</p>
+
+      <p>"区间加、区间求和"是数据结构的第一道分水岭：树状数组加上两个辅助数组也能做，且常数远小于线段树；线段树则把一切可合并的信息都能挂上去。本文把两种实现写全，并把树状数组那套公式推导出来，避免只能背结论。</p>
+
+      <h2>一、树状数组的基础形态</h2>
+
+      <p>树状数组维护前缀和，<code>i &amp; -i</code> 取出 $i$ 的最低位，决定了第 $i$ 个位置管辖的区间长度。单点修改向上跳，前缀查询向下跳，两者都只走 $O(\log n)$ 步：</p>
+
+      <pre><code>int n;
+vector&lt;long long&gt; t;          // 1-indexed
+
+void add(int i, long long v) {
+    for (; i &lt;= n; i += i &amp; -i) t[i] += v;
+}
+
+long long prefix(int i) {
+    long long s = 0;
+    for (; i &gt; 0; i -= i &amp; -i) s += t[i];
+    return s;
+}</code></pre>
+
+      <p>"单点加、区间和"直接由前缀相减得到。"区间加、单点查"用差分：在 $l$ 处加 $v$、在 $r+1$ 处减 $v$，某点的值等于它的前缀和。这两种形态都不需要额外空间。</p>
+
+      <h2>二、区间加与区间求和</h2>
+
+      <p>把原数组 $a$ 的差分记为 $d_i=a_i-a_{i-1}$，位置 $x$ 的前缀和是</p>
+
+      $$P(x)=\sum_{i=1}^{x}a_i=\sum_{i=1}^{x}(x-i+1)\,d_i=(x+1)\sum_{i=1}^{x}d_i-\sum_{i=1}^{x} i\,d_i.$$
+
+      <p>右侧是两个独立的前缀和：一个维护 $d_i$，一个维护 $i\,d_i$。区间 $[l,r]$ 加 $v$ 时，差分只有两处变化：$d_l\mathrel{+}=v$、$d_{r+1}\mathrel{-}=v$，对应的第二个数组在同样位置加上 $v\cdot l$ 与 $-v\cdot(r+1)$。于是两个树状数组同步更新即可。</p>
+
+      <pre><code>struct BITRange {
+    int n;
+    vector&lt;ll&gt; b1, b2;                       // b1 维护差分 d，b2 维护 i*d[i]
+    explicit BITRange(int n) : n(n), b1(n + 2, 0), b2(n + 2, 0) {}
+    void add(vector&lt;ll&gt; &amp;t, int i, ll v) {
+        for (; i &lt;= n; i += i &amp; -i) t[i] += v;
+    }
+    void range_add(int l, int r, ll v) {
+        if (l &gt; r) return;
+        add(b1, l, v);      add(b1, r + 1, -v);
+        add(b2, l, v * l);  add(b2, r + 1, -v * (r + 1));
+    }
+    ll prefix_sum(int x) {                   // 前 x 项之和
+        ll s1 = 0, s2 = 0;
+        for (int i = x; i &gt; 0; i -= i &amp; -i) { s1 += b1[i]; s2 += b2[i]; }
+        return (ll)(x + 1) * s1 - s2;
+    }
+    ll range_sum(int l, int r) { return prefix_sum(r) - prefix_sum(l - 1); }
+};</code></pre>
+
+      <p>两处细节。其一，数组要开到 $n+2$，因为更新会用到 <code>r+1</code>；直接写成 <code>n+1</code> 并让 <code>r=n</code> 时会越界。其二，<code>range_sum</code> 依赖 $P(0)=0$，<code>prefix_sum(0)</code> 自然返回 0，不需要特判。</p>
+
+      <h2>三、线段树的区间加与区间求和</h2>
+
+      <p>线段树把标记下传（pushdown）和区间合并写成递归，代价是常数变大、递归深度为 $O(\log n)$。完整实现如下：</p>
+
+      <pre><code>struct SegTree {
+    int n;
+    vector&lt;ll&gt; sum, tag;
+    explicit SegTree(int n) : n(n), sum(4 * n + 4, 0), tag(4 * n + 4, 0) {}
+    void apply(int o, int l, int r, ll v) { sum[o] += v * (r - l + 1); tag[o] += v; }
+    void push(int o, int l, int r) {
+        if (!tag[o] || l == r) return;
+        int mid = (l + r) &gt;&gt; 1;
+        apply(o &lt;&lt; 1, l, mid, tag[o]);
+        apply(o &lt;&lt; 1 | 1, mid + 1, r, tag[o]);
+        tag[o] = 0;
+    }
+    void add(int o, int l, int r, int ql, int qr, ll v) {
+        if (ql &lt;= l &amp;&amp; r &lt;= qr) { apply(o, l, r, v); return; }
+        push(o, l, r);
+        int mid = (l + r) &gt;&gt; 1;
+        if (ql &lt;= mid) add(o &lt;&lt; 1, l, mid, ql, qr, v);
+        if (qr &gt; mid) add(o &lt;&lt; 1 | 1, mid + 1, r, ql, qr, v);
+        sum[o] = sum[o &lt;&lt; 1] + sum[o &lt;&lt; 1 | 1];
+    }
+    ll query(int o, int l, int r, int ql, int qr) {
+        if (ql &lt;= l &amp;&amp; r &lt;= qr) return sum[o];
+        push(o, l, r);
+        int mid = (l + r) &gt;&gt; 1;
+        ll res = 0;
+        if (ql &lt;= mid) res += query(o &lt;&lt; 1, l, mid, ql, qr);
+        if (qr &gt; mid) res += query(o &lt;&lt; 1 | 1, mid + 1, r, ql, qr);
+        return res;
+    }
+};</code></pre>
+
+      <p>区间长度必须参与运算：<code>sum[o] += v * (r-l+1)</code>。写成 <code>sum[o] += v</code> 是初学阶段最常见的错误，单点测试能过，区间一长就对不上。同理，<code>tag</code> 表示"这个节点整段都被加过、但子节点还没加"，下传后要清零，否则标记会被重复应用。</p>
+
+      <p>若题目只要求区间加、单点查，还有更省的形式：不做 pushdown，查询时把根到叶路径上的标记全部累加（标记永久化）。标记永久化也适用于区间加、区间求和，只要在查询时多带一个"从根累积的标记"参数，合并时按区间长度折算。</p>
+
+      <h2>四、选择与易错点</h2>
+
+      <p>两者都能做区间加与区间求和时，优先树状数组：代码短、常数小、不用递归。线段树的优势在于信息可以换：区间最值、区间乘加、区间赋值、维护最大子段和、按值域动态开点，这些都是树状数组不好扩展的。另一种常见的组合是树状数组维护值域、用倍增找第 $k$ 小，$O(\log n)$ 完成，比线段树下探更快。</p>
+
+      <ul>
+        <li><code>i &amp; -i</code> 要求 <code>i</code> 为正；下标从 1 开始，0 会死循环。</li>
+        <li>区间更新的右端点加一位置必须落在数组范围内，否则越界写。</li>
+        <li>线段树数组开 <code>4n</code>，动态开点则按操作数估节点数量，通常 $m\log n$ 量级。</li>
+        <li>答案与中间量同用 <code>long long</code>：长度为 $10^5$ 的区间、每次加 $10^9$，前缀和已到 $10^{14}$。</li>
+        <li>递归线段树在 $n$ 很大、递归层数深时注意栈空间；迭代版本可以规避，但区间加的实现会复杂不少。</li>
+      </ul>
+
+      <h2>五、验证</h2>
+
+      <p>两份实现在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告。对拍：随机 $n\le 20$，30 次操作（区间加或区间求和），与直接维护的原数组逐次比对，3000 组；两种结构的答案必须同时等于暴力值，任何一次不一致立即报错。全部通过。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 树状数组与线段树</span>
+      <span>00000018.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

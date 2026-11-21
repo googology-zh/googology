@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图论：最小生成树与二分图匹配 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 生成树与匹配</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000001f.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>图论：最小生成树与二分图匹配</h1>
+      <p class="meta">2026-11-21 · 编号 0000001f</p>
+
+      <p>这两个问题共用一套底层：并查集负责"是否已成环"，增广路负责"能否再多配一对"。前者是拟阵上的贪心，后者是交替路上的翻转。本文给出 Kruskal 与匈牙利算法的完整实现，以及判断它们何时该被替换。</p>
+
+      <h2>一、最小生成树</h2>
+
+      <p>Kruskal 按边权升序尝试，能加就加，用并查集判断两端是否已在同一连通块。正确性来自割性质：任何割中权值最小的边一定属于某棵最小生成树，因此每一步的选择都可以扩展成最优解。</p>
+
+      <pre><code>struct DSU2 {
+    vector&lt;int&gt; p, r;
+    explicit DSU2(int n) : p(n + 1), r(n + 1, 0) { for (int i = 0; i &lt;= n; ++i) p[i] = i; }
+    int find(int x) { while (p[x] != x) { p[x] = p[p[x]]; x = p[x]; } return x; }
+    bool unite(int a, int b) {
+        a = find(a); b = find(b);
+        if (a == b) return false;
+        if (r[a] &lt; r[b]) swap(a, b);
+        p[b] = a;
+        if (r[a] == r[b]) ++r[a];
+        return true;
+    }
+};
+
+ll kruskal(int n, vector&lt;tuple&lt;int, int, int&gt;&gt; e) {   // (u, v, w)，返回最小生成树权值，不连通返回 -1
+    sort(e.begin(), e.end(), [](const auto &amp;x, const auto &amp;y) { return get&lt;2&gt;(x) &lt; get&lt;2&gt;(y); });
+    DSU2 d(n);
+    ll w = 0; int used = 0;
+    for (auto [u, v, c] : e)
+        if (d.unite(u, v)) { w += c; ++used; }
+    return used == n - 1 ? w : -1;
+}</code></pre>
+
+      <p>要点有三。自环与重边交给并查集自然忽略，不用预处理；<code>used</code> 必须等于 $n-1$，否则图不连通，此时返回 <code>-1</code> 而不是当前累加值，避免把"森林"当成"树"；边权为负不影响正确性，负数图同样适用。</p>
+
+      <p>Prim 适合稠密图：从任意点出发，用堆维护"已选集合到未选点的最小边"，复杂度 $O((n+m)\log n)$ 或 $O(n^2)$ 朴素版。稀疏图上 Kruskal 的排序开销更小，稠密图上朴素 Prim 常数更低。两者都要求无向图；有向图的最小树形图是另一类问题（朱刘算法），不能直接套。</p>
+
+      <p>"最小生成森林"是常见变体：不要求连通，直接让 Kruskal 跑完所有能加的边，返回森林而不是判断 <code>used == n-1</code>。次小生成树则在最小生成树上枚举非树边替换，配合路径最大值查询，复杂度多一个 $O(m\log n)$。</p>
+
+      <h2>二、二分图与最大匹配</h2>
+
+      <p>先用染色判二分图：从每个未染色点出发交替染色，遇到同色相邻即不是二分图。判完之后，最大匹配可以用匈牙利算法：对每个左部点尝试增广，沿"匹配边—非匹配边"交替走，找到未匹配的右部点就把整条路翻转。</p>
+
+      <pre><code>bool kuhn_dfs(int u, const vector&lt;vector&lt;int&gt;&gt; &amp;g, vector&lt;int&gt; &amp;match, vector&lt;char&gt; &amp;vis) {
+    for (int v : g[u]) {
+        if (vis[v]) continue;
+        vis[v] = 1;
+        if (match[v] == -1 || kuhn_dfs(match[v], g, match, vis)) { match[v] = u; return true; }
+    }
+    return false;
+}
+
+int max_matching(int n, int m, const vector&lt;vector&lt;int&gt;&gt; &amp;g) {
+    vector&lt;int&gt; match(m, -1);
+    int res = 0;
+    for (int u = 0; u &lt; n; ++u) {
+        vector&lt;char&gt; vis(m, 0);
+        if (kuhn_dfs(u, g, match, vis)) ++res;
+    }
+    return res;
+}</code></pre>
+
+      <p><code>vis</code> 必须每轮重置：它标记的是"本次增广中访问过的右部点"，跨轮复用会让后续点无法重新尝试。复杂度 $O(nm)$（$n$ 为左部点数），在 $n,m$ 到 $10^4$ 且边稠密时会超时，此时换 Hopcroft–Karp，$O(E\sqrt{V})$，实现上把单路增广换成按层 BFS 找多条增广路。</p>
+
+      <p>由 König 定理，二分图的最大匹配数等于最小点覆盖数，也等于最大独立集在补集中的规模：最大独立集大小 $=|V|-$ 最小点覆盖。这三者的转换几乎每年都会在题目里出现。</p>
+
+      <p>带权匹配（最大权完美匹配）用 KM 算法，$O(n^3)$，注意它要求两侧点数相等，不相等时补零边，并把"不存在的边"设成负无穷而不是 $0$，否则算法会给不该配的对配上。费用流也能做带权匹配，但常数大得多。</p>
+
+      <h2>三、易错点</h2>
+
+      <ul>
+        <li>Kruskal 不判连通性，把森林权值当成生成树输出。</li>
+        <li>并查集按秩合并与路径压缩同时使用时，<code>r</code> 记录的是秩而非精确高度，比较逻辑不能反过来。</li>
+        <li>匈牙利中 <code>vis</code> 标记在错误的一侧：标记左部点而不是右部点会导致无限递归。</li>
+        <li>二分图染色用 <code>0/1</code> 标记却把"未染色"也当成颜色 0。</li>
+        <li>递归实现的增广在链长 $10^5$ 时爆栈，改迭代或增大栈。</li>
+      </ul>
+
+      <h2>四、验证</h2>
+
+      <p>代码在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告。对拍：$n\le 5$、边数 $\le 6$ 的随机图，Kruskal 与"枚举所有 $n-1$ 条边的子集、逐个判连通"的最小权值比对 300 组；随机二分图（左右各 $\le 5$ 点）的匹配数与回溯枚举全部匹配方案比对 300 组。全部一致，含不连通图与孤立点的情形。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 生成树与匹配</span>
+      <span>0000001f.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

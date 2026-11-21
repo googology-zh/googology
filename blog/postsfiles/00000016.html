@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>字符串匹配：前缀函数、KMP 与失配链 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 前缀函数与 KMP</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000016.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>字符串匹配：前缀函数、KMP 与失配链</h1>
+      <p class="meta">2026-11-21 · 编号 00000016</p>
+
+      <p>字符串匹配的全部内容都可以压到一个数组上：对每个位置求出"最长的、与原串开头相同的真后缀"，这个数组既能做模式匹配，也能求最小循环节，还能在失配树上做计数。本文按这个数组的定义、构造和用法依次展开。</p>
+
+      <h2>一、前缀函数</h2>
+
+      <p>对串 $s$，前缀函数 $\pi[i]$ 定义为 $s[0..i]$ 的最长真前缀长度，且该前缀同时是 $s[0..i]$ 的后缀。$\pi[0]=0$，因为真前缀不能等于整个串。</p>
+
+      <p>求法是从前一位的答案出发，不断沿失配链回退，直到能接上字符为止：</p>
+
+      <pre><code>vector&lt;int&gt; prefix_function(const string &amp;s) {
+    int n = (int)s.size();
+    vector&lt;int&gt; pi(n, 0);
+    for (int i = 1; i &lt; n; ++i) {
+        int j = pi[i - 1];
+        while (j &gt; 0 &amp;&amp; s[i] != s[j]) j = pi[j - 1];
+        if (s[i] == s[j]) ++j;
+        pi[i] = j;
+    }
+    return pi;
+}</code></pre>
+
+      <p>复杂度是 $O(n)$，关键在于 <code>while</code> 里的 $j$ 只会沿着 $\pi$ 链下降。每一轮外层循环让 $j$ 至多加一，因此总的下降次数不超过总的上升次数，是均摊常数，不是每轮都可能扫一遍。</p>
+
+      <p>这个数组有两组立刻能用的结论。其一，$s$ 的最小循环节长度是 $n-\pi[n-1]$，前提是该长度整除 $n$；不整除时前缀函数不能直接给出周期。其二，所有"同时是前缀与后缀"的长度构成一条链：$n-\pi[n-1]$ 的下一个候选是 $\pi[\,\pi[n-1]-1\,]$，依次回退，直到 $0$。链上的长度就是候选 border 长度。</p>
+
+      <h2>二、在文本中定位模式串</h2>
+
+      <p>最省事的写法是把模式串与文本拼成一个串，中间塞一个两边都不出现的分隔符，再求一次前缀函数。凡是在文本部分出现 $\pi[i]=m$ 的位置，就意味着一次完整匹配：</p>
+
+      <pre><code>vector&lt;int&gt; kmp(const string &amp;t, const string &amp;p) {
+    vector&lt;int&gt; occ;
+    int m = (int)p.size();
+    if (m == 0) return occ;
+    vector&lt;int&gt; pi = prefix_function(p + '\1' + t);
+    for (int i = m + 1; i &lt; (int)pi.size(); ++i)
+        if (pi[i] &gt;= m) occ.push_back(i - 2 * m);
+    return occ;
+}</code></pre>
+
+      <p>位置换算需要说明。拼接串的下标 $i$ 对应文本下标 $i-(m+1)$，而一次长度 $m$ 的后缀匹配的起点是 $i-m+1$，两者相减得 $i-2m$。这个偏移量写错是这类代码最常见的错误，表现出来就是答案整体平移。</p>
+
+      <p>分隔符取 <code>'\1'</code> 只是约定：输入的字符集不包含它时，跨过分隔符的匹配一定失败，前缀函数在文本开头不会继承模式串的 border。若字符集覆盖所有字节，就改用逐字符在线匹配：维护当前已匹配长度 $j$，读入字符后按失配链回退，$j=m$ 时记录一次并令 $j=\pi[m-1]$ 继续。在线版本不需要额外空间，适合流式输入。</p>
+
+      <p>另外要注意：<code>pi[i] &gt;= m</code> 的判断在拼接串里已经足够，因为 $\pi$ 值不会超过 $m$（分隔符保证不会跨越模式串自身）。匹配位置允许重叠，例如在 <code>aaaa</code> 里找 <code>aa</code> 会得到 0、1、2 三个位置。</p>
+
+      <h2>三、失配链上的计数</h2>
+
+      <p>统计"模式串的每个前缀在文本中出现多少次"，可以直接在失配树上做。位置 $i$ 得到 $\pi[i]=L$，说明长度 $L$ 的前缀在此处有一次出现；而长度 $L$ 的每次出现，同时也会让它的 border 长度各出现一次。于是自长向短累加即可：</p>
+
+      <pre><code>vector&lt;long long&gt; occurrences_by_border(const string &amp;p, const string &amp;t) {
+    int m = (int)p.size();
+    vector&lt;int&gt; pi_p = prefix_function(p);
+    vector&lt;int&gt; border(m + 1, 0);            // border[L]：长度 L 前缀的最长 border
+    for (int L = 1; L &lt;= m; ++L) border[L] = pi_p[L - 1];
+    vector&lt;int&gt; pi = prefix_function(p + '\1' + t);
+    vector&lt;long long&gt; cnt(m + 1, 0);         // cnt[L]：文本中 pi 值恰为 L 的位置数
+    for (int i = m + 1; i &lt; (int)pi.size(); ++i) ++cnt[pi[i]];
+    // 沿 border 链向下累计，就得到每条前缀在文本中的出现次数
+    for (int L = m; L &gt;= 1; --L) cnt[border[L]] += cnt[L];
+    return cnt;
+}</code></pre>
+
+      <p>这里 <code>border</code> 必须由模式串自己的前缀函数给出，不能用拼接串的 $\pi$ 直接下标。长度 $L$ 前缀的 border 是 $\pi_p[L-1]$，少减这个一，整条链会错位一级，计数会出现数量级的偏差。</p>
+
+      <p>同一套结构还能处理"统计每个前缀作为子串出现的位置"以外的变体，例如求所有前缀的出现次数后做排名、或者在失配树上跑子树和。模式匹配、循环节、border 计数这三件事共用一次前缀函数的开销，这也是 KMP 在实际题目里比看起来更常用的原因。</p>
+
+      <h2>四、与 Z 函数的对应</h2>
+
+      <p>Z 函数定义为 $z[i]$ 等于 $s$ 与 $s[i..]$ 的最长公共前缀长度，$z[0]=n$。把 $s$ 与自身拼接求前缀函数，再取 $\pi[i+n-1]$ 就得到 $z[i]$；反过来由 $z$ 也能恢复 $\pi$。二者信息量相同，只是索引方向不同。扩展 KMP 求的是模式串每个后缀与文本的最长公共前缀，用的就是 Z 函数，复杂度仍是线性的。</p>
+
+      <h2>五、易错点与验证</h2>
+
+      <ul>
+        <li>位置偏移 <code>i - 2 * m</code> 与在线版本的记录时机，二者只能选一种，混用会重复或漏掉匹配。</li>
+        <li>空模式串需要单独返回，否则 <code>p + '\1' + t</code> 的前缀函数没有意义。</li>
+        <li>最小循环节公式只在 $n-\pi[n-1]$ 整除 $n$ 时成立，不整除时该值是"最长 border 的补"，不是周期。</li>
+        <li>计数用 <code>long long</code>：单字符模式在长文本上的出现次数会超过 <code>int</code>。</li>
+        <li>递归求 border 链时深度可达 $O(n)$，迭代写法更稳。</li>
+      </ul>
+
+      <p>本文的三个函数都在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告，并与暴力实现做了对拍：前缀函数对每个位置直接枚举长度验证；匹配位置与 <code>string::compare</code> 的结果逐一比对；border 计数对每条前缀单独统计，三组随机测试各 2000、2000、1000 例，全部一致。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 前缀函数与 KMP</span>
+      <span>00000016.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

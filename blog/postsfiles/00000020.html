@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>莫队：离线区间查询的移动次序 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 莫队</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000020.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+      <h1>莫队：离线区间查询的移动次序</h1>
+      <p class="meta">2026-11-21 · 编号 00000020</p>
+
+      <p>莫队把一组区间查询按特殊顺序重排，使左右指针的总移动量从 $O(nq)$ 降到 $O(n\sqrt q)$。它不改变维护方式，只改变访问顺序；代价是必须离线，且维护的信息要能在端点增删时 $O(1)$ 更新。</p>
+
+      <h2>一、分块与排序</h2>
+
+      <p>把左端点按块划分，块内按右端点排序：左指针的移动被限制在块长以内，右指针在每个块内单调移动一次。块长取 $n/\sqrt q$ 时总复杂度达到 $O(n\sqrt q)$。</p>
+
+      <pre><code>struct MoQuery { int l, r, id; };
+
+vector&lt;int&gt; mo_distinct(const vector&lt;int&gt; &amp;a, vector&lt;MoQuery&gt; qs) {
+    int n = (int)a.size();
+    int B = max(1, (int)(n / max(1.0, sqrt((double)qs.size()))));
+    sort(qs.begin(), qs.end(), [&amp;](const MoQuery &amp;x, const MoQuery &amp;y) {
+        int bx = x.l / B, by = y.l / B;
+        if (bx != by) return bx &lt; by;
+        return (bx &amp; 1) ? x.r &gt; y.r : x.r &lt; y.r;
+    });
+    int maxv = *max_element(a.begin(), a.end());
+    vector&lt;int&gt; cnt(maxv + 1, 0), ans(qs.size());
+    int cur = 0, L = 0, R = -1;
+    for (auto &amp;q : qs) {
+        while (R &lt; q.r) if (++cnt[a[++R]] == 1) ++cur;
+        while (L &gt; q.l) if (++cnt[a[--L]] == 1) ++cur;
+        while (R &gt; q.r) if (--cnt[a[R--]] == 0) --cur;
+        while (L &lt; q.l) if (--cnt[a[L++]] == 0) --cur;
+        ans[q.id] = cur;
+    }
+    return ans;
+}</code></pre>
+
+      <p>四个 <code>while</code> 的次序可以任意，只要区间最终一致；但括号省略的写法依赖"自增自减返回新值"的语义，读代码时要看清是先移动指针还是先访问元素。初始 <code>L = 0</code>、<code>R = -1</code> 表示当前区间为空，第一次扩展时 <code>++R</code> 落在 $0$，不会越界。</p>
+
+      <p><code>(bx &amp; 1) ? x.r &gt; y.r : x.r &lt; y.r</code> 是奇偶排序：相邻块一个升序、一个降序，使右指针在块交界处不必从最右端回到最左端。这一步通常能省掉约一半的右指针移动，是可选项，但代价为零。</p>
+
+      <figure>
+        <img src="../postassets/00000020/mo-odd-even.svg" alt="莫队奇偶排序下左右指针在相邻块间的移动轨迹" width="640" height="200">
+        <figcaption>块 0 内右指针升序扫过，块 1 翻转成降序，落点接在上一块的末端。</figcaption>
+      </figure>
+
+      <h2>二、什么可以被维护</h2>
+
+      <p>莫队要求"加一个元素"和"删一个元素"都能 $O(1)$ 更新当前答案，并且答案可由当前窗口直接读出。典型的可维护量有：不同数值的个数、出现次数为 $k$ 的元素个数、区间和、区间最大频率（配合值域分块，$O(\sqrt n)$ 调整）。</p>
+
+      <p>反例是"区间内的逆序对数量"：加入一个元素需要查询它前面有多少个比它小的数，普通莫队做不到 $O(1)$，要换成带树状数组的 $O(\log n)$ 调整，此时总复杂度变成 $O(n\sqrt q\log n)$，是否可接受取决于数据。</p>
+
+      <p>只删不加的问题（例如"删除后仍保持某性质"）可以用回滚莫队：块内只扩展右端点，左端点小范围暴力后回滚，避免删除操作。实现上依赖"可撤销"的状态记录，与可撤销并查集是同一思路。</p>
+
+      <h2>三、常见变体</h2>
+
+      <ul>
+        <li>带修改莫队：三元组 $(l,r,t)$，块长取 $n^{2/3}$，复杂度 $O(n^{5/3})$，适合"单点修改 + 区间查询"的离线题。</li>
+        <li>树上莫队：对树做欧拉序，把路径查询转成区间查询，注意 LCA 的单独处理与出现次数为奇偶的点集。</li>
+        <li>二次离线：把"移动指针时产生的大量单点查询"再离线一遍，用更便宜的结构批量回答，能把 $O(n\sqrt q\log n)$ 优化到 $O(n\sqrt q)$。</li>
+        <li>值域分块配莫队：维护频率数组后，用块内计数找最大频率或第 $k$ 大，单次 $O(\sqrt n)$。</li>
+      </ul>
+
+      <h2>四、易错点</h2>
+
+      <ul>
+        <li>块长取常数（如 $316$）而不按 $n/\sqrt q$ 计算，$q$ 与 $n$ 差一个数量级时复杂度明显变差。</li>
+        <li>查询区间按半开写法记录，与代码里的闭区间 <code>[L, R]</code> 混用，答案整体偏移一位。</li>
+        <li>排序比较函数里对右端点用了非严格序，<code>std::sort</code> 可能越界。</li>
+        <li><code>cnt</code> 数组按最大值开，值域是 $10^9$ 时直接爆内存，需要先离散化。</li>
+        <li>把 <code>ans</code> 按下标写回时用错 <code>id</code>（排序后 <code>qs</code> 的顺序已变，必须用原始编号）。</li>
+      </ul>
+
+      <h2>五、验证</h2>
+
+      <p>代码在 GCC 16 上以 <code>-std=c++17 -O2 -Wall -Wextra</code> 编译无警告。对拍：随机 $n\le 25$、查询数 $\le 12$，值域 $1..5$，对每个查询用 <code>set</code> 统计不同数值个数作为对照，300 组全部一致。测试特意包含空区间（$l=r$）、重复元素与乱序查询，用来覆盖指针初始状态与四个移动分支。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 莫队</span>
+      <span>00000020.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

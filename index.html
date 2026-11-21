@@ -5,226 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Googology Pages</title>
 <meta name="description" content="大数记法方向的笔记、说明与工具。">
-<link rel="stylesheet" href="assets/win7.css">
-<style>
-  /* desktop: window in the middle, a glass gadget on each side */
-
-  body.desktop {
-    flex-direction: row;
-    align-items: stretch;
-    justify-content: space-between;
-    gap: 18px;
-    padding: 22px;
-  }
-
-  .win.home { flex: 0 1 700px; align-self: stretch; max-height: none; }
-
-  .rail {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 0;
-    min-width: 200px;
-    max-width: 360px;
-    align-self: stretch;
-    min-height: 0;
-    overflow-y: auto;
-    padding: 12px 14px 14px;
-    color: #22475f;
-    border: 1px solid rgba(255, 255, 255, .78);
-    border-radius: 7px;
-    background: linear-gradient(180deg,
-      rgba(255, 255, 255, .74) 0%,
-      rgba(238, 248, 255, .62) 55%,
-      rgba(220, 239, 252, .56) 100%);
-    box-shadow:
-      0 0 0 1px rgba(112, 165, 202, .38),
-      0 10px 26px rgba(0, 20, 40, .30),
-      inset 0 1px 0 rgba(255, 255, 255, .95);
-    backdrop-filter: blur(10px) saturate(1.05);
-    -webkit-backdrop-filter: blur(10px) saturate(1.05);
-  }
-
-  .rail::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: 150px;
-    border-radius: inherit;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .28), rgba(255, 255, 255, 0));
-    pointer-events: none;
-  }
-
-  .rail h2 {
-    position: relative;
-    margin: 0 0 9px;
-    padding-bottom: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #14456a;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, .9);
-    border-bottom: 1px solid rgba(116, 158, 190, .45);
-  }
-
-  .rail p {
-    position: relative;
-    margin: 0 0 9px;
-    font-size: 11px;
-    line-height: 1.7;
-    color: #33566f;
-    text-shadow: 0 1px 0 rgba(255, 255, 255, .75);
-  }
-
-  .rail-meta {
-    margin: auto 0 0;
-    padding-top: 8px;
-    font-size: 10px;
-    line-height: 1.6;
-    color: #64849b;
-    border-top: 1px solid rgba(116, 158, 190, .38);
-  }
-
-  .msg-list {
-    position: relative;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .msg-item { padding: 6px 0 7px; border-bottom: 1px dotted rgba(96, 138, 170, .42); }
-  .msg-item:first-child { padding-top: 0; }
-  .msg-item:last-child { border-bottom: 0; }
-
-  .msg-date {
-    display: block;
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 10px;
-    letter-spacing: .5px;
-    color: #6c8ba2;
-  }
-
-  .msg-text {
-    display: block;
-    margin-top: 2px;
-    font-size: 11px;
-    line-height: 1.55;
-    color: #2b4f69;
-  }
-
-  .msg-empty {
-    margin: 9px 0 0;
-    font-size: 11px;
-    color: #6c8ba2;
-  }
-
-  /* ---- centre window content ---- */
-
-  .home-body {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 28px 30px 26px;
-    background: linear-gradient(180deg, #ffffff 0%, #ffffff 58%, #f1f8fd 100%);
-  }
-
-  .brand { text-align: center; }
-
-  .brand h1 {
-    margin: 4px 0 5px;
-    font-size: 21px;
-    font-weight: 600;
-    letter-spacing: .3px;
-    color: #14456a;
-    text-shadow: 0 1px 0 #fff, 0 0 12px rgba(255, 255, 255, .9);
-  }
-
-  .brand p { margin: 0; font-size: 12px; color: #65839a; }
-
-  .rule {
-    width: 100%;
-    height: 1px;
-    margin: 20px 0 22px;
-    background: linear-gradient(90deg,
-      rgba(190, 214, 232, 0) 0%,
-      #c3daec 18%,
-      #c3daec 82%,
-      rgba(190, 214, 232, 0) 100%);
-  }
-
-  .tiles {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-  }
-
-  .tile {
-    width: 150px;
-    padding: 16px 10px 14px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    text-decoration: none;
-    color: inherit;
-    border: 1px solid #d7e5f0;
-    border-radius: 5px;
-    background: linear-gradient(180deg, #ffffff 0%, #f3faff 100%);
-    box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(24, 66, 100, .07);
-  }
-
-  .tile:hover,
-  .tile:focus-visible {
-    border-color: #9cc6e4;
-    background: linear-gradient(180deg, #ffffff 0%, #e6f3fd 100%);
-    box-shadow: inset 0 1px 0 #fff, 0 2px 7px rgba(28, 84, 130, .18);
-  }
-
-  .tile:focus-visible { outline: 2px solid #8dc4e9; outline-offset: 1px; }
-
-  .tile:active {
-    background: linear-gradient(180deg, #eaf5fd 0%, #d8eafa 100%);
-    box-shadow: inset 0 2px 4px rgba(28, 84, 130, .18);
-  }
-
-  .tile-ico {
-    display: block;
-    width: 52px;
-    height: 52px;
-    margin-bottom: 7px;
-    filter: drop-shadow(0 2px 2px rgba(28, 70, 105, .22));
-  }
-
-  .tile-name { font-size: 13px; font-weight: 600; color: #1a4a6e; }
-  .tile-desc { margin-top: 1px; font-size: 11px; color: #718aa0; }
-
-  @media (max-width: 1040px) {
-    body.desktop {
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: 20px;
-    }
-    .win.home { order: 1; flex: 0 0 auto; width: 100%; max-width: 700px; }
-    .rail { order: 2; align-self: center; width: 100%; max-width: 700px; flex: 0 0 auto; border-radius: 7px; }
-    .rail-right { order: 3; }
-    .rail::before { height: 30%; }
-  }
-</style>
+<link rel="stylesheet" href="assets/mfc.css">
 </head>
-<body class="desktop">
+<body class="desktop home-page">
   <aside class="rail rail-left" aria-labelledby="about-title">
     <h2 id="about-title">关于</h2>
     <p>Googology Pages 是大数记法方向的内容站点，收录相关的笔记、说明与工具。</p>
     <p>站点现设三个栏目：博客用于发布成篇的笔记与讨论，展开器用于汇集可交互的记法工具，定义用于收录术语与特殊定义。</p>
     <p>定义栏目的词条存于 definitions.json，由配套的帖子生成器维护；生成器可新建、修改与删除词条，站点页面只负责读取与呈现。</p>
+    <p>博客中的帖子由 AI 合成，发布前经人工复核与校订；文中代码均在本地编译并对拍验证。</p>
     <p>站点为纯静态页面，只使用 HTML、CSS 与少量 JavaScript，不引入前端框架。</p>
-    <p class="rail-meta">栏目 3 · 页面 4 · 帖子 2<br>更新于 2026-11-14</p>
+    <p class="rail-meta">栏目 3 · 页面 4 · 帖子 32<br>更新于 2026-11-21</p>
   </aside>
 
   <main class="win home">
@@ -242,6 +33,10 @@
       <div class="brand">
         <h1>Googology Pages</h1>
         <p>大数记法的笔记、说明与工具</p>
+        <p class="ai-note" role="note">
+          <span class="ai-badge">AI 合成</span>
+          <span>本站博客中的帖子由 AI 合成，发布前经人工复核。</span>
+        </p>
       </div>
 
       <div class="rule" aria-hidden="true"></div>
@@ -249,23 +44,12 @@
       <nav class="tiles" aria-label="分区">
         <a class="tile" href="blog/">
           <svg class="tile-ico" viewBox="0 0 52 52" aria-hidden="true">
-            <defs>
-              <linearGradient id="ic-paper" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#ffffff"/>
-                <stop offset=".55" stop-color="#eef7fd"/>
-                <stop offset="1" stop-color="#cfe4f3"/>
-              </linearGradient>
-              <linearGradient id="ic-ink" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#5a98c2"/>
-                <stop offset="1" stop-color="#235c80"/>
-              </linearGradient>
-            </defs>
-            <path d="M11 5h21l10 10v32H11z" fill="url(#ic-paper)" stroke="#6f9dbb" stroke-width="1.3"/>
-            <path d="M32 5l10 10h-10z" fill="#c6dcea" stroke="#6f9dbb" stroke-width="1.3"/>
-            <g fill="url(#ic-ink)">
-              <rect x="18" y="21" width="18" height="2" rx="1"/>
-              <rect x="18" y="27" width="18" height="2" rx="1"/>
-              <rect x="18" y="33" width="11" height="2" rx="1"/>
+            <path d="M11 5h21l10 10v32H11z" fill="#e6e4dc" stroke="#6e6a62" stroke-width="1.3"/>
+            <path d="M32 5l10 10h-10z" fill="#d6d3c9" stroke="#6e6a62" stroke-width="1.3"/>
+            <g fill="#3f4c58">
+              <rect x="18" y="21" width="18" height="2"/>
+              <rect x="18" y="27" width="18" height="2"/>
+              <rect x="18" y="33" width="11" height="2"/>
             </g>
           </svg>
           <span class="tile-name">博客</span>
@@ -274,19 +58,8 @@
 
         <a class="tile" href="expander/">
           <svg class="tile-ico" viewBox="0 0 52 52" aria-hidden="true">
-            <defs>
-              <linearGradient id="ic-frame" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#ffffff"/>
-                <stop offset=".55" stop-color="#eef7fd"/>
-                <stop offset="1" stop-color="#d2e6f4"/>
-              </linearGradient>
-              <linearGradient id="ic-arrow" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#6ba9cf"/>
-                <stop offset="1" stop-color="#235c80"/>
-              </linearGradient>
-            </defs>
-            <rect x="8.5" y="8.5" width="35" height="35" rx="3" fill="url(#ic-frame)" stroke="#6f9dbb" stroke-width="1.3"/>
-            <g fill="url(#ic-arrow)">
+            <rect x="8.5" y="8.5" width="35" height="35" fill="#f3f2ec" stroke="#6e6a62" stroke-width="1.3"/>
+            <g fill="#3f4c58">
               <path d="M26 10l-5 7h10z"/>
               <rect x="25" y="16.5" width="2" height="5"/>
               <path d="M26 42l-5-7h10z"/>
@@ -303,24 +76,13 @@
 
         <a class="tile" href="definitions/">
           <svg class="tile-ico" viewBox="0 0 52 52" aria-hidden="true">
-            <defs>
-              <linearGradient id="ic-ledger" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#ffffff"/>
-                <stop offset=".55" stop-color="#eef7fd"/>
-                <stop offset="1" stop-color="#cfe4f3"/>
-              </linearGradient>
-              <linearGradient id="ic-ledger-ink" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#5a98c2"/>
-                <stop offset="1" stop-color="#235c80"/>
-              </linearGradient>
-            </defs>
-            <rect x="13.5" y="6.5" width="25" height="39" rx="2.2" fill="url(#ic-ledger)" stroke="#6f9dbb" stroke-width="1.3"/>
-            <rect x="13.5" y="6.5" width="5" height="39" rx="2.2" fill="#d9e9f5" stroke="#6f9dbb" stroke-width="1.1"/>
-            <rect x="23" y="14" width="12" height="9" rx="1" fill="#ffffff" stroke="#9dbfd6" stroke-width="1"/>
-            <g fill="url(#ic-ledger-ink)">
-              <rect x="23" y="27" width="12" height="1.8" rx=".9"/>
-              <rect x="23" y="32" width="12" height="1.8" rx=".9"/>
-              <rect x="23" y="37" width="8" height="1.8" rx=".9"/>
+            <rect x="13.5" y="6.5" width="25" height="39" fill="#f3f2ec" stroke="#6e6a62" stroke-width="1.3"/>
+            <rect x="13.5" y="6.5" width="5" height="39" fill="#ddd9d0" stroke="#6e6a62" stroke-width="1.1"/>
+            <rect x="23" y="14" width="12" height="9" fill="#ffffff" stroke="#a3a097" stroke-width="1"/>
+            <g fill="#3f4c58">
+              <rect x="23" y="27" width="12" height="1.8"/>
+              <rect x="23" y="32" width="12" height="1.8"/>
+              <rect x="23" y="37" width="8" height="1.8"/>
             </g>
           </svg>
           <span class="tile-name">定义</span>
@@ -339,6 +101,26 @@
     <h2 id="messages-title">消息</h2>
     <ul class="msg-list">
       <li class="msg-item">
+        <span class="msg-date">2026-11-21</span>
+        <span class="msg-text">帖子支持附件资产：正文页可挂图片与源码文件，列表页标注附件数。</span>
+      </li>
+      <li class="msg-item">
+        <span class="msg-date">2026-11-21</span>
+        <span class="msg-text">站点外观改为 MFC 轻拟物：各页样式合并为 assets/mfc.css，不再逐页内联。</span>
+      </li>
+      <li class="msg-item">
+        <span class="msg-date">2026-11-21</span>
+        <span class="msg-text">博客新增六篇算法帖：二分、贪心、排序、哈希、最小生成树与二分图匹配、莫队。</span>
+      </li>
+      <li class="msg-item">
+        <span class="msg-date">2026-11-21</span>
+        <span class="msg-text">主页标注帖子来源：博客内容由 AI 合成，发布前经人工复核。</span>
+      </li>
+      <li class="msg-item">
+        <span class="msg-date">2026-11-21</span>
+        <span class="msg-text">博客新增五篇算法帖：字符串匹配、最短路、区间修改与查询、同余方程、并查集。</span>
+      </li>
+      <li class="msg-item">
         <span class="msg-date">2026-11-14</span>
         <span class="msg-text">「定义」栏目改由帖子生成器维护，词条移至 definitions.json；原页面内置词条已移除，库自空开始。</span>
       </li>
@@ -355,8 +137,7 @@
         <span class="msg-text">栏目调整：关于与消息移至桌面两侧独立面板。</span>
       </li>
     </ul>
-    <p class="msg-empty">暂无更早记录。</p>
-    <p class="rail-meta">4 条消息<br>起于 2026-11-14</p>
+    <p class="rail-meta">9 条消息<br>起于 2026-11-14</p>
   </aside>
 </body>
 </html>

@@ -4,135 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>博客 — Googology Pages</title>
-<link rel="stylesheet" href="../assets/win7.css">
-<style>
-  .blog { width: 820px; }
-
-  .toolbar {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    flex: 0 0 auto;
-    padding: 7px 9px;
-    background: linear-gradient(180deg, #fafdff 0%, #ecf5fc 100%);
-    border-bottom: 1px solid #c8dcea;
-  }
-
-  .back-mark {
-    width: 0;
-    height: 0;
-    border-top: 4px solid transparent;
-    border-bottom: 4px solid transparent;
-    border-right: 6px solid #2f6288;
-  }
-
-  .addressbar {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    height: 23px;
-    min-width: 0;
-    padding: 0 9px;
-    font-size: 11px;
-    color: #2b5473;
-    white-space: nowrap;
-    overflow: hidden;
-    background: #fff;
-    border: 1px solid #93b1c8;
-    border-radius: 3px;
-    box-shadow: inset 0 1px 2px rgba(28, 62, 92, .14);
-  }
-
-  .addressbar .sep { color: #93aec1; }
-  .addressbar .cur { color: #16496f; font-weight: 600; }
-
-  .pane-head {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    flex: 0 0 auto;
-    padding: 10px 14px 8px;
-    background: #fff;
-    border-bottom: 1px solid #dfeaf3;
-  }
-
-  .pane-head h2 {
-    margin: 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: #1b4a6b;
-    text-shadow: 0 1px 0 #fff;
-  }
-
-  .pane-count { font-size: 11px; color: #6d8aa0; }
-
-  .posts {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    background: #fff;
-  }
-
-  .post {
-    display: grid;
-    grid-template-columns: 92px minmax(0, 1fr) 158px;
-    gap: 14px;
-    align-items: center;
-    padding: 10px 14px 11px;
-    text-decoration: none;
-    color: inherit;
-    border-bottom: 1px solid #e8f0f6;
-  }
-
-  .post:hover { background: linear-gradient(180deg, #f7fcff 0%, #e3f1fd 100%); }
-  .post:focus-visible { outline: 2px solid #8dc4e9; outline-offset: -2px; }
-
-  .post-id {
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 11px;
-    letter-spacing: .6px;
-    color: #6b879c;
-  }
-
-  .post-title { display: block; font-size: 13px; font-weight: 600; color: #1a4767; }
-  .post-summary { display: block; margin-top: 2px; font-size: 11px; color: #6f889d; }
-
-  .post-side { text-align: right; }
-  .post-date { display: block; font-size: 11px; color: #5d7b92; }
-
-  .post-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    justify-content: flex-end;
-    margin-top: 3px;
-  }
-
-  .tag {
-    padding: 0 4px;
-    font-size: 10px;
-    color: #2f5f83;
-    background: linear-gradient(180deg, #f4fbff 0%, #dceefb 100%);
-    border: 1px solid #b9d6ea;
-    border-radius: 2px;
-  }
-
-  .empty {
-    margin: 0;
-    padding: 26px 18px;
-    font-size: 12px;
-    color: #5b7a90;
-  }
-
-  .empty code {
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 11px;
-    color: #33586f;
-  }
-
-  .empty.error { color: #8a3a33; }
-</style>
+<link rel="stylesheet" href="../assets/mfc.css">
 </head>
 <body class="desktop">
   <main class="win blog">
@@ -221,7 +93,10 @@
       title: String(item.title || '').trim() || '未命名',
       date: String(item.date || '').trim(),
       summary: String(item.summary || '').trim(),
-      tags: Array.isArray(item.tags) ? item.tags.filter(Boolean).map(String) : []
+      tags: Array.isArray(item.tags) ? item.tags.filter(Boolean).map(String) : [],
+      assets: Array.isArray(item.assets) ? item.assets.filter(function (a) {
+        return a && typeof a.file === 'string';
+      }).length : 0
     };
   }
 
@@ -260,6 +135,7 @@
 
       var side = el('span', 'post-side');
       if (post.date) side.appendChild(el('span', 'post-date', post.date));
+      if (post.assets) side.appendChild(el('span', 'post-assets', '附件 ' + post.assets));
       if (post.tags.length) {
         var tags = el('span', 'post-tags');
         post.tags.forEach(function (tag) { tags.appendChild(el('span', 'tag', tag)); });
