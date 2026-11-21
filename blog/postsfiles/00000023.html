@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perl 入门：标量、上下文与正则 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — Perl 入门</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000023.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+
+      <h1>Perl 入门：标量、上下文与正则</h1>
+      <p class="meta">2026-11-21 · 编号 00000023</p>
+
+      <p>Perl 的语法宽容度很高，同一件事常有五六种写法；这在脚本里是优点，在长代码里是风险。入门部分按现代用法整理：严格模式、标量、数组与哈希、上下文、控制流、子程序、正则。示例都用 <code>use strict</code> 与 <code>use warnings</code>。</p>
+      <h2>一、运行方式与严格模式</h2>
+      <pre><code>#!/usr/bin/env perl
+use strict;
+use warnings;
+
+my $name = "world";
+print "hello, $name\n";</code></pre>
+      <p><code>use strict</code> 要求变量必须用 <code>my</code> 声明，拼错变量名会直接报错而不是静默变成新变量；<code>use warnings</code> 把可疑写法变成告警，例如把字符串当数字用。两行都写，是写 Perl 的最低要求。</p>
+      <p>命令行运行 <code>perl script.pl</code>；<code>perl -c script.pl</code> 只做语法检查并加载模块，不执行主流程。<code>-e</code> 直接执行一段代码，<code>-n</code>、<code>-p</code> 把脚本当成对每一行的循环，读文件时很省事。</p>
+      <h2>二、标量、字符串与数字</h2>
+      <pre><code>my $n = 10;
+my $s = 'literal $n';        # 单引号不插值
+my $t = "interpolated $n";   # 双引号插值
+
+print $n + 1, "\n";
+print "abc" eq "abc" ? "same\n" : "diff\n";
+print "ab" x 3, "\n";        # ababab</code></pre>
+      <p>数值比较用 <code>==</code>、<code>!=</code>、<code>&lt;</code>，字符串比较用 <code>eq</code>、<code>ne</code>、<code>lt</code>、<code>gt</code>。混用不会报错：<code>"abc" == 0</code> 成立，因为非数字字符串在数值上下文里被转成 0，比较结果永远为真。这是 Perl 里最难查的一类 bug，严格模式也拦不住，只能靠习惯。</p>
+      <p>字符串连接用 <code>.</code>，重复用 <code>x</code>。双引号里的 <code>@array</code> 会被插值成所有元素，想输出字面美元符号就写 <code>\$</code>，或者干脆用单引号。</p>
+      <h2>三、数组与哈希</h2>
+      <pre><code>my @list = (1, 2, 3);
+push @list, 4;
+my $last = pop @list;
+
+my %h = (a =&gt; 1, b =&gt; 2);
+$h{c} = 3;
+for my $k (keys %h) {
+    print "$k =&gt; $h{$k}\n";
+}
+
+my @slice = @list[0, 2];
+print scalar @list, "\n";     # 元素个数</code></pre>
+      <p><code>$#list</code> 是最后一个下标，不是长度。哈希的键在内部一律是字符串，<code>$h{1}</code> 与 <code>$h{"1"}</code> 指向同一项。<code>keys</code> 返回的顺序不保证，需要稳定输出时自己 <code>sort</code>。</p>
+      <p><code>each</code> 适合边遍历边处理，但遍历中途增删键会让迭代器失效。<code>exists $h{k}</code> 判断键存在，<code>defined $h{k}</code> 判断值是否已定义——两者不能互相替代，因为键存在而值为 <code>undef</code> 是合法状态。</p>
+      <h2>四、上下文：标量上下文与列表上下文</h2>
+      <pre><code>my @a = (1, 2, 3);
+my $count = @a;      # 标量上下文，得到 3
+my @copy = @a;      # 列表上下文，得到三个元素
+
+sub size {
+    return wantarray ? scalar(@_) : \@_;
+}</code></pre>
+      <p>同一个表达式放在不同位置会给出不同结果，这是 Perl 最容易被误读的地方。<code>print @a</code> 输出三个元素，<code>print scalar @a</code> 输出 3。函数返回值同样受调用位置影响：<code>wantarray</code> 在列表上下文返回真、标量上下文返回假、无返回值上下文返回 <code>undef</code>。</p>
+      <h2>五、控制流与循环</h2>
+      <pre><code>if ($x &gt; 0) { print "positive\n" }
+print "ok\n" if $ok;
+
+while (my $line = &lt;STDIN&gt;) {
+    chomp $line;
+    last if $line eq "quit";
+    print "&gt; $line\n";
+}
+
+for my $i (0 .. 9) { print $i }
+for (1 .. 3) {
+    next if $_ == 2;
+    print "loop $_\n";
+}</code></pre>
+      <p><code>foreach</code> 与 <code>for</code> 是同义词，循环变量缺省时用 <code>$_</code>。<code>last</code> 跳出、<code>next</code> 进下一轮、<code>redo</code> 重跑当前一轮且不重新求值条件。<code>0 .. 9</code> 在列表上下文是范围，在标量上下文是翻转开关，写 <code>for (0 .. 9)</code> 才是想要的。</p>
+      <h2>六、子程序</h2>
+      <pre><code>sub sum {
+    my @nums = @_;
+    my $total = 0;
+    $total += $_ for @nums;
+    return $total;
+}
+
+print sum(1, 2, 3), "\n";
+print sum(), "\n";</code></pre>
+      <p>参数全在 <code>@_</code> 里，它是一个别名数组：<code>$_[0] = 5</code> 会直接改掉调用方的变量。稳妥写法是先 <code>my @args = @_</code> 复制一份，再用 <code>shift</code> 或下标取。返回值在列表上下文返回列表，所以 <code>return (1, 2)</code> 与 <code>return 1, 2</code> 都需要留意调用方要几个值。</p>
+      <h2>七、正则表达式入门</h2>
+      <pre><code>my $s = "abc 123 def";
+if ($s =~ m/(\d+)/) {
+    print "found $1\n";
+}
+
+$s =~ s/\d+/456/;
+my @nums = $s =~ m/(\w+)/g;
+print "@nums\n";</code></pre>
+      <p><code>=~</code> 绑定匹配，<code>!~</code> 取反。省略 <code>m</code> 也可以，<code>/pattern/</code> 就是匹配。<code>/g</code> 在列表上下文返回所有捕获，在标量上下文变成逐次迭代，同一个修饰符两种语义。</p>
+      <p>贪婪匹配 <code>.*</code> 会尽量吃掉字符，最小匹配写 <code>.*?</code>。捕获组在匹配成功后才有效，下一次匹配会覆盖 <code>$1</code> 到 <code>$9</code>；要跨语句使用就先存进变量。</p>
+      <h2>八、易错点</h2>
+      <ul>
+        <li>字符串与数字比较混用，<code>"abc" == 0</code> 为真。</li>
+        <li>忘记 <code>my</code>，变量落进全局包，跨函数串值。</li>
+        <li><code>print @list</code> 与 <code>print scalar @list</code> 输出不同，调试时先想清楚上下文。</li>
+        <li>哈希键带空格或特殊字符时必须加引号，写成 <code>$h{some key}</code> 会告警并得到错误结果。</li>
+        <li>循环里改 <code>@_</code> 或直接改循环列表元素，影响调用方数据。</li>
+        <li>正则跨行匹配要加 <code>/s</code>，多行锚点要加 <code>/m</code>，两者含义不同。</li>
+      </ul>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — Perl 入门</span>
+      <span>00000023.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

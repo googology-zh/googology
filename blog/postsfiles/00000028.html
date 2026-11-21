@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeScript 进阶：类型运算与工程配置 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — TypeScript 进阶</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000028.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+
+      <h1>TypeScript 进阶：类型运算与工程配置</h1>
+      <p class="meta">2026-11-21 · 编号 00000028</p>
+
+      <p>进阶部分讲类型层面的运算：映射类型、条件类型与 <code>infer</code>、工具类型的来源、声明合并与模块扩充、类型守卫，最后是工程配置。这些内容的目标不是炫技，是把重复的类型推导压到一处。</p>
+      <h2>一、keyof 与映射类型</h2>
+      <pre><code>type Keys = keyof User;                       // "id" | "name" | "tags"
+
+type OptionalUser = { [K in keyof User]?: User[K] };
+
+type Getters&lt;T&gt; = {
+  [K in keyof T as `get${Capitalize&lt;string &amp; K&gt;}`]: () =&gt; T[K];
+};</code></pre>
+      <p>映射类型遍历键的联合，<code>as</code> 子句可以重映射键名。这里要写 <code>string &amp; K</code> 是因为 <code>keyof</code> 可能含 number 或 symbol 键，而模板字面量类型只接受字符串。</p>
+      <p>直接写成 <code>[K in keyof T]</code> 的同态映射会保留原属性的可选、只读修饰符；用 <code>Record&lt;string, T&gt;</code> 之类手写则会把修饰符丢掉。需要精细控制时可以加 <code>+?</code>、<code>-?</code>、<code>-readonly</code>。</p>
+      <h2>二、条件类型与 infer</h2>
+      <pre><code>type Elem&lt;T&gt; = T extends (infer U)[] ? U : never;
+type Ret&lt;T&gt; = T extends (...args: any[]) =&gt; infer R ? R : never;
+type Unwrap&lt;T&gt; = T extends Promise&lt;infer U&gt; ? Unwrap&lt;U&gt; : T;
+type NotDist&lt;T&gt; = [T] extends [string] ? 1 : 0;</code></pre>
+      <p>条件类型的左侧是裸类型参数时会发生分发：传入联合类型，会逐支计算再合并结果。<code>[T] extends [U]</code> 把它包进元组，阻止分发。<code>never</code> 在分发时直接得到 <code>never</code>，这是一个常见意外。</p>
+      <p><code>infer</code> 在条件里声明一个待推断的类型变量，同一分支多次出现时结果取交集。递归类型必须有终止分支，否则编译器报深度超限；<code>Unwrap</code> 这类写法在深层嵌套时容易触顶。</p>
+      <h2>三、工具类型</h2>
+      <p><code>Partial</code>、<code>Required</code>、<code>Readonly</code> 是映射类型加修饰符；<code>Pick</code>、<code>Omit</code> 从键集合里取子集；<code>Record</code> 构造键值映射；<code>Exclude</code>、<code>Extract</code>、<code>NonNullable</code> 在联合上做过滤；<code>Parameters</code>、<code>ReturnType</code>、<code>InstanceType</code>、<code>Awaited</code> 从函数与 Promise 里取类型。</p>
+      <p>这些类型全部由映射与条件类型组合而成，看懂实现之后，遇到不满足需求的场景直接按同样思路写一个，比去找第三方类型库快。注意 <code>Omit</code> 不做键的存在性检查，传入不存在的键不会报错，需要严格检查时自己写一个约束。</p>
+      <h2>四、声明与模块扩充</h2>
+      <pre><code>declare const VERSION: string;
+
+declare global {
+  interface Window { app: App }
+}
+
+export {};</code></pre>
+      <p><code>.d.ts</code> 只声明不实现，编译后不产生代码。<code>declare module</code> 给没有类型的第三方库补形状；<code>declare global</code> 扩充全局，但文件必须先是模块（有 <code>export</code> 或 <code>import</code>），否则会直接污染全局，兜底加一行 <code>export {}</code>。</p>
+      <p>给库补类型时优先用上游自带的类型，其次找 <code>@types/包名</code>，最后才自己写在 <code>types.d.ts</code> 里。自己声明的形状与真实实现不一致时，编译通过但运行报错，这类问题最难定位。</p>
+      <h2>五、类型守卫与断言函数</h2>
+      <pre><code>function isString(x: unknown): x is string {
+  return typeof x === "string";
+}
+
+function assertDefined&lt;T&gt;(x: T | undefined): asserts x is T {
+  if (x === undefined) throw new Error("undefined value");
+}</code></pre>
+      <p>谓词函数的返回类型写成 <code>x is T</code>，调用处就能收窄。<code>asserts x is T</code> 是断言签名：调用之后若没有抛出，编译器按 T 处理后续代码。断言函数必须有显式返回类型，写成箭头函数也要单独标注。</p>
+      <p>守卫函数内部不要用 <code>as</code> 绕过检查，那等于把错误挪到别处。复杂结构的校验优先用运行时校验库（如 zod），从 schema 反推类型，比手写守卫更不容易漂移。</p>
+      <h2>六、工程配置</h2>
+      <p><code>strict</code> 必开；<code>noUncheckedIndexedAccess</code> 让下标访问带上 <code>undefined</code>，能拦住越界；<code>exactOptionalPropertyTypes</code> 区分“没写”与“写了 undefined”；<code>isolatedModules</code> 保证单文件转译可行，Babel、esbuild、SWC 都要求它。</p>
+      <p><code>paths</code> 里的别名只影响类型解析与 tsc 输出，打包器要另配 alias 才能运行时生效；<code>declaration</code> 生成 <code>.d.ts</code>，<code>skipLibCheck</code> 跳过依赖库的检查提速度；<code>incremental</code> 缓存上次结果，大项目编译时间能明显下降。</p>
+      <h2>七、易错点</h2>
+      <ul>
+        <li>条件类型忘了分发规则，联合类型算出不符合预期的结果。</li>
+        <li>递归类型没有终止分支，编译器报类型实例化过深。</li>
+        <li>以为 <code>Omit</code> 会检查键是否存在。</li>
+        <li><code>declare global</code> 写在非模块文件里，污染全局作用域。</li>
+        <li>断言函数的返回类型漏写，调用处没有任何收窄。</li>
+        <li><code>paths</code> 配了别名，运行时找不到模块。</li>
+      </ul>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — TypeScript 进阶</span>
+      <span>00000028.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

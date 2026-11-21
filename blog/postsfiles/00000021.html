@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Python 入门：环境、类型与基本结构 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — Python 入门</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000021.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+
+      <h1>Python 入门：环境、类型与基本结构</h1>
+      <p class="meta">2026-11-21 · 编号 00000021</p>
+
+      <p>本文按“能跑起来、能读懂、能改对”的顺序整理 Python 的入门要点：环境、类型、序列、函数、异常与文件、类与模块。示例默认 Python 3.10 及以上，涉及语法的地方只写标准库。</p>
+      <h2>一、环境与运行方式</h2>
+      <p>Python 2 与 3 的分歧已经是历史问题，现在只认 3.x。解释器装进 PATH 之后，脚本用 <code>python 文件名</code> 运行，也可以用 <code>python -m 模块名</code> 以模块方式运行——后者会走当前的解释器路径，在虚拟环境里更可靠。</p>
+      <pre><code>python -m venv .venv
+.venv\Scripts\activate        # Windows
+source .venv/bin/activate      # Linux / macOS
+python -V
+pip install requests
+python -m http.server 8000     # 起一个本地静态服务</code></pre>
+      <p>虚拟环境的作用是把依赖锁在项目目录内，避免装到全局 site-packages。激活之后，<code>pip</code> 与 <code>python</code> 都指向这个环境；退出用 <code>deactivate</code>。依赖清单写成 <code>requirements.txt</code>，一条一条固定版本，别人复现时不用猜。</p>
+      <h2>二、类型与可变性</h2>
+      <p>Python 的类型挂在对象上，变量只是名字。给一个名字重新赋值，只是让它指向另一个对象，不会改变原先那个对象。这条规则决定了“传参是传引用”还是“传值”这类问题的答案：传的是引用，但不可变对象看起来像值。</p>
+      <pre><code>a = [1, 2, 3]
+b = a          # b 与 a 指向同一个列表
+b.append(4)    # a 也变成 [1, 2, 3, 4]
+c = a[:]       # 浅拷贝：新列表，元素还是原来那些对象
+
+x = 256
+y = 256
+print(x is y)  # 小整数有缓存，这里为 True，但不能依赖</code></pre>
+      <p><code>==</code> 比较值，<code>is</code> 比较身份。判断“是不是同一个对象”用 <code>is</code>，判断“内容是否相等”用 <code>==</code>；把 <code>is</code> 用在数字、字符串上，结果取决于缓存，写进代码就是隐患。唯一约定成俗的用法是 <code>x is None</code>。</p>
+      <p>不可变类型包括 <code>int</code>、<code>float</code>、<code>str</code>、<code>tuple</code>、<code>frozenset</code>，它们可以作字典键或集合元素；<code>list</code>、<code>dict</code>、<code>set</code> 不可哈希，放进去会直接抛 <code>TypeError</code>。</p>
+      <h2>三、序列与循环</h2>
+      <pre><code>items = ["a", "b", "c", "d"]
+items[1:3]        # ['b', 'c']，区间左闭右开
+items[::-1]       # 反转
+for i, v in enumerate(items):
+    print(i, v)
+for k, v in {"x": 1}.items():
+    pass
+for a, b in zip([1, 2, 3], "xy"):
+    pass          # 长度取较短的一方</code></pre>
+      <p><code>range(n)</code> 不产生列表，只在迭代时逐个给值。切片越界不报错，返回能拿到的那一段；单下标越界才抛 <code>IndexError</code>。这一点在写边界判断时很有用：<code>s[-3:]</code> 对短串也安全。</p>
+      <p>列表头部的删除是 $O(n)$：<code>del items[0]</code> 和 <code>items.pop(0)</code> 都要整体前移。需要频繁两端操作时用 <code>collections.deque</code>；只需要尾部操作时 <code>append</code> 与 <code>pop()</code> 都是均摊 $O(1)$。</p>
+      <h2>四、函数</h2>
+      <p>默认参数只在函数定义时求值一次，所以可变默认值会被所有调用共享，这是 Python 最经典的一个坑。约定做法是把默认值写成 <code>None</code>，进函数后再创建。</p>
+      <pre><code>def add(item, bucket=None):
+    if bucket is None:
+        bucket = []
+    bucket.append(item)
+    return bucket
+
+def f(a, b=2, *args, **kwargs):
+    print(a, b, args, kwargs)
+
+f(1)                 # 1 2 () {}
+f(1, 3, 4, k=5)      # 1 3 (4,) {'k': 5}</code></pre>
+      <p>名字查找的顺序是 local → enclosing → global → builtin。函数内给全局变量赋值需要 <code>global</code> 声明，但更稳的做法是把状态放进参数或类里。闭包捕获的是变量本身：外层变量被重新绑定后，内层看到的是新值，不是定义时的快照；要固定值就用默认参数把值绑进去。</p>
+      <h2>五、异常与文件</h2>
+      <pre><code>try:
+    n = int(text)
+except ValueError as e:
+    print("不是整数:", e)
+else:
+    print("解析结果", n)
+finally:
+    pass
+
+with open("data.txt", encoding="utf-8") as f:
+    for line in f:
+        line = line.rstrip("\n")</code></pre>
+      <p>不要写裸 <code>except:</code>，它会连 <code>KeyboardInterrupt</code> 一起吞掉；需要兜底时至少写 <code>except Exception</code> 并把异常重新抛出或记录。<code>else</code> 分支在没异常时执行，适合把“成功之后的处理”和“可能抛错的语句”分开。</p>
+      <p><code>with</code> 保证退出时关闭文件，即使中途抛异常。文本文件一定显式写 <code>encoding</code>：Windows 默认编码与 Linux 不同，读同一个文件可能一边正常一边乱码。路径拼接用 <code>pathlib.Path</code>，比手拼字符串和斜杠可移植。</p>
+      <h2>六、类与模块</h2>
+      <pre><code>class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __repr__(self):
+        return f"Point({self.x}, {self.y})"
+
+p = Point(1, 2)
+print(p)           # Point(1, 2)</code></pre>
+      <p><code>__init__</code> 负责初始化，创建对象的是 <code>__new__</code>，多数场景不用关心。<code>__repr__</code> 给人看的调试表示，<code>__str__</code> 给最终输出，两者都实现时 <code>print</code> 走 <code>__str__</code>。</p>
+      <p>模块就是文件，包就是带 <code>__init__.py</code> 的目录（3.3 之后命名空间包可以省略该文件）。脚本作为程序入口时用 <code>if __name__ == "__main__":</code> 保护，避免被 import 时把主流程跑一遍。<code>from m import *</code> 会覆盖同名符号，正式代码里不要用。</p>
+      <h2>七、易错点</h2>
+      <ul>
+        <li>可变默认参数：<code>def f(x, acc=[])</code> 里的列表会跨调用共享。</li>
+        <li>用 <code>is</code> 比较数字或字符串，结果依赖缓存。</li>
+        <li>循环中边遍历边删除元素，会跳过元素；改成遍历副本或用推导式重建。</li>
+        <li><code>/</code> 永远返回浮点，<code>//</code> 是向下取整，负数方向与直觉相反：<code>-7 // 2 == -4</code>。</li>
+        <li>循环里用 <code>s += str(x)</code> 拼字符串是 $O(n^2)$，改成列表收集后 <code>"".join()</code>。</li>
+        <li>函数名与变量名遮住内置函数（<code>list = [...]</code>），后续调用会失败。</li>
+      </ul>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — Python 入门</span>
+      <span>00000021.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

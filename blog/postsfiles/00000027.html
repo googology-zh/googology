@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TypeScript 入门：类型、泛型与收窄 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — TypeScript 入门</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000027.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+
+      <h1>TypeScript 入门：类型、泛型与收窄</h1>
+      <p class="meta">2026-11-21 · 编号 00000027</p>
+
+      <p>TypeScript 是带静态类型的 JavaScript：写出来的类型只在编译期起作用，编译后全部擦除，运行时仍然是普通 JS。入门部分先解决配置，再依次讲基础类型、接口与别名、泛型、联合收窄、类。</p>
+      <h2>一、安装与配置</h2>
+      <pre><code>npx tsc --init
+npx tsc --noEmit
+
+// tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "strict": true,
+    "outDir": "dist"
+  }
+}</code></pre>
+      <p><code>tsc</code> 既能编译也能只做类型检查，<code>--noEmit</code> 就是只检查不产出文件。<code>strict</code> 一次打开 <code>noImplicitAny</code>、<code>strictNullChecks</code>、<code>strictFunctionTypes</code> 等一组检查，新项目应当直接开。</p>
+      <p>运行时不认识类型，所以不能写 <code>if (x instanceof MyInterface)</code>。要在运行时判断形状，只能检查真实存在的值：<code>typeof</code>、<code>instanceof</code>、<code>in</code>、字面量比较。</p>
+      <h2>二、基础类型</h2>
+      <pre><code>let n: number = 1;
+let s: string = "x";
+let arr: number[] = [1, 2];
+let tuple: [string, number] = ["a", 1];
+let u: unknown = JSON.parse(text);
+
+function fail(): never {
+  throw new Error("unreachable");
+}</code></pre>
+      <p><code>any</code> 关闭检查并且会向调用方扩散，尽量不用；<code>unknown</code> 是安全的顶层类型，必须收窄后才能访问属性；<code>never</code> 表示函数不可能返回，可用于完整性检查；<code>void</code> 表示返回值被忽略。</p>
+      <p><code>number</code> 只有一种数字类型，整数与浮点不分（<code>bigint</code> 是另一回事）。<code>tuple</code> 的长度与每个位置的类型都固定，越界访问在开启 <code>noUncheckedIndexedAccess</code> 后才有 <code>undefined</code> 提醒。</p>
+      <h2>三、接口与类型别名</h2>
+      <pre><code>interface User {
+  id: number;
+  name?: string;
+  readonly tags: string[];
+}
+
+type Point = { x: number; y: number };
+type Id = string | number;</code></pre>
+      <p><code>interface</code> 可以声明合并，适合描述对象形状与给第三方库补类型；<code>type</code> 可以做联合、交叉、条件类型，表达力更强。两者在多数场景可以互换，团队内定一条规则即可。</p>
+      <p>可选属性 <code>name?: string</code> 与 <code>name: string | undefined</code> 在 <code>exactOptionalPropertyTypes</code> 下不等价：前者不允许显式赋 <code>undefined</code>。索引签名 <code>[key: string]: number</code> 会约束所有字符串键，包括不想要的。</p>
+      <h2>四、函数与泛型</h2>
+      <pre><code>function first&lt;T&gt;(arr: T[]): T | undefined {
+  return arr[0];
+}
+
+const pick = &lt;T, K extends keyof T&gt;(obj: T, key: K): T[K] =&gt; obj[key];</code></pre>
+      <p>泛型在调用处推断，推断不出来才需要显式写 <code>first&lt;string&gt;(["a"])</code>。<code>extends</code> 约束类型参数必须满足某个形状，<code>keyof T</code> 取出键的联合，<code>T[K]</code> 取出对应的值类型。</p>
+      <p>在 <code>.tsx</code> 文件里，箭头函数的泛型要写成 <code>&lt;T,&gt;</code>，否则解析器会把它当成 JSX 标签的开头。函数重载写多条签名加一条实现签名，实现签名对外不可见。</p>
+      <h2>五、联合类型与收窄</h2>
+      <pre><code>type Shape =
+  | { kind: "circle"; r: number }
+  | { kind: "rect"; w: number; h: number };
+
+function area(s: Shape): number {
+  switch (s.kind) {
+    case "circle": return Math.PI * s.r ** 2;
+    case "rect": return s.w * s.h;
+  }
+}</code></pre>
+      <p><code>typeof</code>、<code>instanceof</code>、<code>in</code>、字面量判别都能触发收窄。给联合的每一支加一个共同的字段（这里是 <code>kind</code>），是最容易维护的做法；switch 的每个分支处理完，编译器就能推出剩余分支。</p>
+      <p>收窄只在当前作用域有效。把窄化后的变量传进回调，回调里它又退回联合类型，因为编译器无法保证回调执行时值没变。需要保住类型就把值复制到新的局部变量。</p>
+      <h2>六、类与修饰符</h2>
+      <pre><code>class Box {
+  constructor(private readonly value: number) {}
+  get(): number { return this.value; }
+}
+
+abstract class Base {
+  abstract run(): void;
+}</code></pre>
+      <p>参数属性 <code>private readonly value: number</code> 会同时声明字段并赋值。注意 <code>private</code>、<code>protected</code> 只是编译期约束，运行时仍能从外部访问，真私有要用 <code>#field</code>。<code>implements</code> 只检查形状，不继承实现。</p>
+      <p><code>abstract</code> 类不能实例化，子类必须实现抽象方法。<code>readonly</code> 只禁止重新赋值，不禁止修改对象内部；初始化之后仍能 push 数组。</p>
+      <h2>七、易错点</h2>
+      <ul>
+        <li>把类型当成运行时的检查，写了 <code>instanceof MyInterface</code>。</li>
+        <li><code>any</code> 一路传下去，最后整条链路都失去检查。</li>
+        <li>以为 <code>readonly</code> 能保护数组内容不被改。</li>
+        <li>在 <code>.tsx</code> 里写箭头泛型不加逗号，编译报 JSX 错误。</li>
+        <li>关闭了 <code>strictNullChecks</code>，<code>undefined</code> 到处漏。</li>
+        <li>用 <code>as</code> 强行断言绕过报错，把问题挪到运行期。</li>
+      </ul>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — TypeScript 入门</span>
+      <span>00000027.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perl 进阶：引用、对象与模块 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — Perl 进阶</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000024.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+
+      <h1>Perl 进阶：引用、对象与模块</h1>
+      <p class="meta">2026-11-21 · 编号 00000024</p>
+
+      <p>进阶部分处理的是同一批语法在规模变大之后的用法：引用与嵌套数据结构、bless 对象、文件与目录、正则的编译与命名捕获、异常处理，以及从 CPAN 取模块。</p>
+      <h2>一、引用与嵌套结构</h2>
+      <pre><code>my @a = (1, 2);
+my $ref = \@a;
+print $ref-&gt;[0], "\n";
+
+my %h = (list =&gt; [1, 2], name =&gt; "x");
+print $h{list}[1], "\n";
+
+use Data::Dumper;
+print Dumper(\%h);</code></pre>
+      <p><code>\@a</code> 取数组引用，<code>\%h</code> 取哈希引用，<code>\$x</code> 取标量引用。解引用有 <code>$ref->[0]</code>、<code>$$ref[0]</code>、<code>@{$ref}</code> 三种写法，箭头在两层之间可以省略，所以 <code>$h{list}[1]</code> 不需要写成 <code>$h{list}->[1]</code>，但超过两层时建议每层都写箭头，读起来清楚。</p>
+      <p>引用比较比的是地址，<code>$ref == $other</code> 判断是否指向同一份数据；比较内容要用 <code>Data::Dumper</code> 或 <code>Storable::freeze</code>。深拷贝也可以用它，手写递归复制容易漏掉自引用结构。</p>
+      <h2>二、bless 与对象</h2>
+      <pre><code>package Point;
+
+sub new {
+    my ($class, $x, $y) = @_;
+    my $self = bless { x =&gt; $x, y =&gt; $y }, $class;
+    return $self;
+}
+
+sub x {
+    my $self = shift;
+    return $self-&gt;{x};
+}
+
+1;</code></pre>
+      <p><code>bless</code> 把一个引用打上包名，之后用这个引用调用方法时，Perl 会到对应包里找同名子程序。方法调用的第一个参数是类名（构造时）或对象本身（实例方法时），所以 <code>my ($self) = @_</code> 是固定起手式。</p>
+      <p>继承靠 <code>@ISA</code> 或 <code>use parent</code>，方法查找沿 <code>@ISA</code> 向上。Perl 没有访问控制，<code>_private</code> 这类前缀只是约定；要真正限制就在构造时用词法闭包把数据关起来，代价是调试时看不到内部状态。</p>
+      <h2>三、文件与目录</h2>
+      <pre><code>open(my $fh, '&lt;', $path) or die "open $path: $!";
+while (my $line = &lt;$fh&gt;) {
+    chomp $line;
+    print $line, "\n";
+}
+close $fh;
+
+open(my $out, '&gt;', "out.txt") or die "open out.txt: $!";
+print $out "done\n";
+close $out;</code></pre>
+      <p>一定要用三参数 <code>open</code>：两参数形式会把文件名里的 <code>|</code> 当成管道、把开头空格当成模式，属于注入风险。检查返回值，失败时 <code>$!</code> 给出系统错误原因。追加写用 <code>>></code>，二进制文件加 <code>binmode($fh)</code>。</p>
+      <p><code>&lt;&gt;</code> 会依次读 <code>@ARGV</code> 里的文件，没有参数时读标准输入；<code>@ARGV</code> 被脚本改过时行为会跟着变。遍历目录用 <code>File::Find</code> 或 <code>Path::Tiny</code>，手写 <code>opendir</code> 别忘了过滤 <code>.</code> 与 <code>..</code>。</p>
+      <h2>四、正则进阶</h2>
+      <pre><code>my $re = qr{ (\d{4}) - (\d{2}) - (\d{2}) }x;
+if ("2026-11-21" =~ $re) {
+    print "$1 $2 $3\n";
+}
+
+my $s = "hello world";
+$s =~ s/(?&lt;word&gt;\w+)/uc($+{word})/ge;
+print "$s\n";</code></pre>
+      <p><code>qr{}</code> 预编译正则，循环里反复使用同一个模式能省掉编译开销；<code>/x</code> 允许在模式里换行与写注释。命名捕获用 <code>(?<name>...)</code>，结果在 <code>%+</code> 里；<code>/e</code> 把替换部分当代码求值，能力大但也危险，拼接进来的外部字符串会变成可执行代码。</p>
+      <p>零宽断言 <code>(?=...)</code>、<code>(?!...)</code>、<code>(?&lt;=...)</code>、<code>(?&lt;!...)</code> 只检查位置不消耗字符，适合“后面必须跟某物”的约束。递归结构用 <code>(?1)</code> 引用第一组，能匹配配对括号这类嵌套文本；写之前先想清楚要不要加 <code>(?&gt;...)</code> 防回溯爆炸。</p>
+      <h2>五、错误处理</h2>
+      <pre><code>my $ok = eval {
+    die "boom\n" if $bad;
+    1;
+};
+if (!$ok) {
+    warn "caught: $@";
+}</code></pre>
+      <p><code>eval</code> 捕获 <code>die</code>，错误文本在 <code>$@</code> 里。它很快被下一次 <code>eval</code> 覆盖，所以捕获后立刻存进变量。<code>die</code> 文本末尾带换行时不会附加文件名行号，适合面向用户的报错；不带换行则附加位置，适合开发者排查。</p>
+      <p><code>Try::Tiny</code> 提供了 <code>try/catch/finally</code> 的写法，避免了 <code>$@</code> 被覆盖的老问题；<code>autodie</code> 则让 <code>open</code>、<code>close</code> 这类内置函数失败时自动抛异常，少写一堆 <code>or die</code>。</p>
+      <h2>六、常用模块</h2>
+      <p><code>Getopt::Long</code> 解析命令行选项，<code>JSON::PP</code> 编解码 JSON，<code>Path::Tiny</code> 读写文件与路径拼接，<code>File::Temp</code> 生成临时文件，<code>Time::Piece</code> 处理日期。这些模块都在核心发行版里，不需要额外安装。</p>
+      <p>第三方模块用 <code>cpanm 模块名</code> 安装，依赖写进 <code>cpanfile</code>。<code>perl -M模块 -e 1</code> 可以确认模块是否装好、能否加载。版本敏感的脚本在文件头写 <code>use 5.036;</code>，低于该版本会直接拒绝运行。</p>
+      <h2>七、易错点</h2>
+      <ul>
+        <li>两参数 <code>open</code>，文件名被当成模式或管道执行。</li>
+        <li>引用层级写错：<code>$h{a}{b}</code> 与 <code>$h{a}{b}</code> 少写一层会得到引用而不是值。</li>
+        <li><code>bless</code> 之后忘了 <code>return $self</code>，构造返回真值但不是对象。</li>
+        <li><code>eval</code> 之后没有立即保存 <code>$@</code>。</li>
+        <li>正则加 <code>/g</code> 又在标量上下文里当列表用，结果只拿到第一个。</li>
+        <li><code>sort</code> 默认按字符串比较，数字排序要写 <code>sort { $a &lt;=&gt; $b }</code>。</li>
+      </ul>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — Perl 进阶</span>
+      <span>00000024.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

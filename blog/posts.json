@@ -228,6 +228,62 @@
       "assets": [
         { "file": "mo-odd-even.svg", "name": "奇偶排序的指针轨迹", "note": "块交界处右指针不回扫" }
       ]
+    },
+    {
+      "id": "00000021",
+      "title": "Python 入门：环境、类型与基本结构",
+      "date": "2026-11-21",
+      "summary": "解释器与运行方式、类型与可变性、序列与循环、函数、异常与文件、类与模块。",
+      "tags": ["Python", "入门"]
+    },
+    {
+      "id": "00000022",
+      "title": "Python 进阶：生成器、装饰器与并发",
+      "date": "2026-11-21",
+      "summary": "推导式与生成器、装饰器、上下文管理器、类型标注与 dataclass、三种并发模型、性能与内存。",
+      "tags": ["Python", "进阶"]
+    },
+    {
+      "id": "00000023",
+      "title": "Perl 入门：标量、上下文与正则",
+      "date": "2026-11-21",
+      "summary": "三种变量前缀、标量与列表上下文、插值规则、控制流与子程序、正则与文件处理。",
+      "tags": ["Perl", "入门"]
+    },
+    {
+      "id": "00000024",
+      "title": "Perl 进阶：引用、对象与模块",
+      "date": "2026-11-21",
+      "summary": "引用与嵌套结构、bless 与继承、三参数 open 与目录、正则编译与命名捕获、eval 异常、常用模块。",
+      "tags": ["Perl", "进阶"]
+    },
+    {
+      "id": "00000025",
+      "title": "JavaScript 入门：类型、函数与异步",
+      "date": "2026-11-21",
+      "summary": "浏览器与 Node 的差别、let 与 const、类型转换与相等比较、函数与 this、数组与对象、async 与 fetch、DOM 事件。",
+      "tags": ["JavaScript", "入门"]
+    },
+    {
+      "id": "00000026",
+      "title": "JavaScript 进阶：原型、模块与事件循环",
+      "date": "2026-11-21",
+      "summary": "原型链与 class、ESM 与 CommonJS、事件循环的次序、Promise 组合与取消、Proxy 与属性描述符、性能与内存。",
+      "tags": ["JavaScript", "进阶"]
+    },
+    {
+      "id": "00000027",
+      "title": "TypeScript 入门：类型、泛型与收窄",
+      "date": "2026-11-21",
+      "summary": "tsc 与 tsconfig 关键项、基础类型与 unknown、接口与类型别名、函数与泛型约束、可辨识联合与收窄、类与修饰符。",
+      "tags": ["TypeScript", "入门"]
+    },
+    {
+      "id": "00000028",
+      "title": "TypeScript 进阶：类型运算与工程配置",
+      "date": "2026-11-21",
+      "summary": "映射类型与键重映射、条件类型与 infer、工具类型、声明合并与模块扩充、类型守卫与断言函数、严格模式开关。",
+      "tags": ["TypeScript", "进阶"]
     }
   ]
 }

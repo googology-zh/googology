@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JavaScript 入门：类型、函数与异步 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — JavaScript 入门</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000025.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+
+      <h1>JavaScript 入门：类型、函数与异步</h1>
+      <p class="meta">2026-11-21 · 编号 00000025</p>
+
+      <p>JavaScript 的入门门槛低，坑也集中。本文只讲四件事：变量与类型、函数与 this、数组对象、异步。DOM 与事件放在最后，作为浏览器侧的最小可用部分。示例在浏览器控制台与 Node 里都能跑，涉及平台差异的地方单独注明。</p>
+      <h2>一、两个运行环境</h2>
+      <pre><code>node app.js
+node -e "console.log(process.version)"
+npm init -y</code></pre>
+      <p>浏览器与 Node 共享的只有语言本身和事件循环。DOM、<code>window</code>、<code>localStorage</code> 只存在于浏览器；文件系统、进程、网络底层只存在于 Node。写代码时先确认这段逻辑跑在哪一边，否则会碰到 <code>document is not defined</code> 这类错误。</p>
+      <p>浏览器里普通 <code>&lt;script&gt;</code> 是全局作用域、非严格模式；加 <code>type="module"</code> 或写 <code>"use strict"</code> 就进入严格模式，隐式全局变量、给只读属性赋值都会直接报错。新代码一律按严格模式写。</p>
+      <h2>二、变量与类型</h2>
+      <pre><code>let n = 10;
+const s = "text";
+
+typeof null          // "object"，历史遗留
+null == undefined    // true
+null === undefined   // false
+Number("12px")       // NaN
+NaN === NaN          // false
+0.1 + 0.2            // 0.30000000000000004</code></pre>
+      <p><code>let</code> 有块级作用域，<code>const</code> 只固定绑定，不冻结对象内容：<code>const o = {}; o.x = 1</code> 完全合法。<code>var</code> 是函数作用域且会提升，现在只在兼容老代码时见到。</p>
+      <p><code>==</code> 会做类型转换，<code>null == undefined</code>、<code>"0" == 0</code>、<code>"" == false</code> 都为真；统一用 <code>===</code>。判断 NaN 用 <code>Number.isNaN</code>，因为 <code>NaN !== NaN</code>。浮点误差没法消除，金额用整数分或者字符串转十进制库。</p>
+      <h2>三、函数与 this</h2>
+      <pre><code>function add(a, b) { return a + b; }
+const inc = a =&gt; a + 1;
+
+const obj = {
+  v: 1,
+  get() { return this.v; }
+};
+
+const detached = obj.get;
+detached();               // this 丢失
+obj.get.call({ v: 2 });   // 2</code></pre>
+      <p>箭头函数没有自己的 <code>this</code> 与 <code>arguments</code>，它取定义位置外层的值；普通函数的 <code>this</code> 由调用方式决定：<code>obj.get()</code> 绑定到 <code>obj</code>，单独拿出来调用就绑定到 <code>undefined</code>（严格模式）。</p>
+      <p><code>call</code>、<code>apply</code>、<code>bind</code> 可以显式指定 <code>this</code>，<code>bind</code> 返回一个新函数且不可再改。回调里要保留外层对象，用箭头函数最省事；需要动态 <code>this</code> 时才用普通函数。</p>
+      <h2>四、对象与数组</h2>
+      <pre><code>const { a, b = 0 } = obj;
+const arr = [...xs, 9];
+
+const total = xs.map(x =&gt; x * 2)
+                .filter(x =&gt; x &gt; 3)
+                .reduce((sum, x) =&gt; sum + x, 0);
+
+[10, 2, 1].sort();                  // 1, 10, 2，按字符串比
+[10, 2, 1].sort((x, y) =&gt; x - y);   // 1, 2, 10
+
+Object.keys(obj);
+Object.entries(obj);</code></pre>
+      <p><code>map</code>、<code>filter</code>、<code>slice</code>、<code>concat</code> 返回新数组，不改原数组；<code>sort</code>、<code>reverse</code>、<code>splice</code>、<code>push</code> 就地修改。<code>sort</code> 默认把所有元素转字符串再比较，数字排序必须传比较函数，这是最常见的错误之一。</p>
+      <p><code>for...in</code> 遍历可枚举的键，会带上原型链上的属性；<code>for...of</code> 遍历可迭代对象的值，数组、字符串、Map、Set 都支持。数组的 <code>length</code> 可写：赋值变小会截断，赋值变大会留出空位，空位与 <code>undefined</code> 在遍历时表现不同。</p>
+      <h2>五、异步</h2>
+      <pre><code>async function load(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+
+load("/api/list")
+  .then(list =&gt; console.log(list.length))
+  .catch(err =&gt; console.error(err));</code></pre>
+      <p><code>async</code> 函数总是返回 Promise；<code>await</code> 只能在 <code>async</code> 函数或模块顶层使用。抛出的异常会变成 rejected Promise，所以要么在调用处 <code>catch</code>，要么在 <code>try/catch</code> 里 <code>await</code>。</p>
+      <p>多个互不依赖的请求应当并行：<code>Promise.all([a(), b()])</code>；写成两行 <code>await</code> 会串行执行，总耗时相加。发起后忘记 <code>await</code> 的 Promise 出错时不会中断当前流程，只会产生一个未处理拒绝。</p>
+      <h2>六、DOM 与事件</h2>
+      <pre><code>const btn = document.querySelector("#go");
+
+btn.addEventListener("click", event =&gt; {
+  event.preventDefault();
+  console.log(event.target, event.currentTarget);
+});</code></pre>
+      <p>事件从 window 向下捕获到目标，再向上冒泡。<code>addEventListener</code> 默认在冒泡阶段触发，第三个参数传 <code>true</code> 改到捕获阶段。<code>target</code> 是实际被点的元素，<code>currentTarget</code> 是挂监听的那个，两者在冒泡时不同。</p>
+      <p>列表、表格这类会动态增删的容器，把监听挂在父元素上做事件委托，既省监听器，也不怕节点被替换。同步插入大量节点时先用 <code>DocumentFragment</code> 攒起来再一次性挂上，减少重排。</p>
+      <h2>七、易错点</h2>
+      <ul>
+        <li>用 <code>==</code> 比较，被隐式转换骗过一次就再也不敢用。</li>
+        <li><code>const</code> 对象被修改，误以为它是不可变的。</li>
+        <li>数字排序没传比较函数，<code>sort()</code> 按字符串排。</li>
+        <li>回调里的 <code>this</code> 丢失，或者箭头函数想用 <code>arguments</code>。</li>
+        <li><code>for...in</code> 遍历数组下标，拿到的是字符串键。</li>
+        <li>异步函数里忘了 <code>await</code>，Promise 对象被当成结果用。</li>
+      </ul>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — JavaScript 入门</span>
+      <span>00000025.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

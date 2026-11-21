@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JavaScript 进阶：原型、模块与事件循环 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — JavaScript 进阶</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000026.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+
+      <h1>JavaScript 进阶：原型、模块与事件循环</h1>
+      <p class="meta">2026-11-21 · 编号 00000026</p>
+
+      <p>进阶部分讲的是运行时行为：原型链与 class 的真实关系、模块系统、事件循环的次序、Promise 的几种组合方式，以及 Proxy 与属性描述符这类偏底层的工具。理解这些之后，很多看起来奇怪的现象都能推出来。</p>
+      <h2>一、原型链与 class</h2>
+      <pre><code>class Point {
+  constructor(x, y) { this.x = x; this.y = y; }
+  len() { return Math.hypot(this.x, this.y); }
+}
+
+const p = new Point(3, 4);
+Object.getPrototypeOf(p) === Point.prototype;  // true
+p.hasOwnProperty("x");                          // true</code></pre>
+      <p><code>class</code> 是原型链的语法糖：方法挂在 <code>prototype</code> 上，实例上只有构造函数里赋的字段。<code>new</code> 做的事依次是创建空对象、把它的原型指向 <code>Point.prototype</code>、执行构造函数、返回这个对象（构造函数显式返回对象时以返回值为准）。</p>
+      <p>属性查找先看自身，再沿原型链向上，直到 <code>Object.prototype</code>。修改实例属性不会影响其他实例，但修改原型上的对象属性会。跨 iframe 或不同 realm 的对象，<code>instanceof</code> 会失效，因为它比较的是原型引用。</p>
+      <h2>二、模块</h2>
+      <pre><code>// math.js
+export const PI = 3.14159;
+export default function square(x) { return x * x; }
+
+// main.js
+import square, { PI } from "./math.js";
+const mod = await import("./lazy.js");</code></pre>
+      <p>ESM 的导入是静态解析、会提升到文件顶部，循环依赖时拿到的是尚未初始化的绑定，访问会报错；CommonJS 的 <code>require</code> 在运行时执行，返回的是 exports 当时的快照。<code>package.json</code> 里的 <code>type</code> 与文件扩展名共同决定用哪一套。</p>
+      <p>动态 <code>import()</code> 返回 Promise，适合按需加载或条件加载。ESM 是只读绑定：导入的变量不能重新赋值，但可以调用它暴露的方法改变模块内部状态。</p>
+      <h2>三、事件循环的次序</h2>
+      <pre><code>console.log(1);
+setTimeout(() =&gt; console.log(2), 0);
+Promise.resolve().then(() =&gt; console.log(3));
+console.log(4);
+// 输出 1 4 3 2</code></pre>
+      <p>同步代码先跑完，然后清空微任务队列，再取下一个宏任务；每个宏任务结束后同样要清空微任务。Promise 回调、<code>queueMicrotask</code>、<code>MutationObserver</code> 属于微任务；<code>setTimeout</code>、IO、UI 事件属于宏任务。</p>
+      <p>Node 的事件循环还分阶段，<code>process.nextTick</code> 优先于 Promise 微任务，<code>setImmediate</code> 在 check 阶段执行，与 <code>setTimeout(0)</code> 的先后取决于调用位置。跨环境写库时不要依赖这种细节。</p>
+      <h2>四、Promise 的几种组合</h2>
+      <pre><code>await Promise.all([a, b]);           // 全成功才成功
+await Promise.allSettled([a, b]);    // 等全部结束，带状态
+await Promise.race([task, timeout]); // 先结束的胜出
+await Promise.any([a, b]);           // 任一成功即成功</code></pre>
+      <p><code>all</code> 里任意一个 reject 就立即失败，其他任务仍在跑，不会自动取消；要真正取消得用 <code>AbortController</code> 把信号传给 fetch。需要逐项结果用 <code>allSettled</code>，它永远成功，返回每项的状态与值或原因。</p>
+      <p><code>race</code> 常用于超时：超时 Promise 先结束就 reject，但原任务没有停，后台继续消耗资源。<code>any</code> 与 <code>race</code> 的差别在于前者忽略失败、只取第一个成功。</p>
+      <h2>五、Proxy 与属性描述符</h2>
+      <pre><code>const defaults = new Proxy({}, {
+  get(target, key) { return key in target ? target[key] : 0; }
+});
+
+Object.defineProperty(obj, "id", {
+  value: 7, writable: false, enumerable: false
+});</code></pre>
+      <p><code>Proxy</code> 能拦截 <code>get</code>、<code>set</code>、<code>has</code>、<code>ownKeys</code> 等十余种内部操作，<code>Reflect</code> 提供对应的默认行为，写拦截器时用它转发，避免手写边界条件。</p>
+      <p><code>defineProperty</code> 可以设 <code>writable</code>、<code>enumerable</code>、<code>configurable</code>，getter/setter 也通过它定义。getter 每次访问都会执行，别在里面做耗时的计算。<code>Object.freeze</code> 只冻结第一层，嵌套对象仍可修改。</p>
+      <h2>六、性能与内存</h2>
+      <p>高频触发的事件用防抖（等停手再执行）或节流（固定间隔最多执行一次），两者解决的问题不同。批量 DOM 操作用 <code>DocumentFragment</code> 或一次 <code>innerHTML</code>，比逐个插入快一个量级。</p>
+      <p><code>WeakMap</code>、<code>WeakSet</code> 的键是弱引用，键被回收时条目自动消失，适合给外部对象挂内部数据。闭包会持有它引用的变量，长时间存在的回调如果闭包了大对象，那块内存就一直不释放。</p>
+      <h2>七、易错点</h2>
+      <ul>
+        <li>把 class 当成 Java 那种类，忘了方法其实在原型上，改原型会影响所有实例。</li>
+        <li>在 <code>all</code> 里指望失败会自动取消其他任务。</li>
+        <li>微任务里递归产生新的微任务，导致宏任务一直排不上，页面卡死。</li>
+        <li>模块循环依赖时在顶层直接使用导入值，拿到 <code>undefined</code>。</li>
+        <li><code>Object.freeze</code> 之后仍去改嵌套对象，误以为已经保护。</li>
+        <li>防抖与节流混用，导致最后一次输入被吞掉。</li>
+      </ul>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — JavaScript 进阶</span>
+      <span>00000026.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>
