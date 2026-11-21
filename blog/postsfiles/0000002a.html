@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>高中数学代数速览 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 高中数学代数速览</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">0000002a.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+
+      <h1>高中数学代数速览</h1>
+      <p class="meta">2026-11-21 · 编号 0000002a</p>
+
+      <p>高中代数的主线是“函数的语言”：集合给出讨论范围，函数给出研究对象，导数给出研究工具。数列是与函数并列的离散版本，不等式与复数是两个独立的小块，计数与二项式定理则在代数与组合之间搭桥。速览只保留每块的骨架：定义、判定条件、常用结论、常见错法。</p>
+
+      <h2>一、集合与常用逻辑</h2>
+      <p>集合的表示有列举法、描述法与区间。子集 $A\subseteq B$ 要求 $A$ 中每个元素都在 $B$ 中，空集是任何集合的子集，讨论子集问题时不要漏掉 $A=\varnothing$。交、并、补满足</p>
+      <p>$$A\cap(B\cup C)=(A\cap B)\cup(A\cap C),\qquad \complement_U(A\cup B)=\complement_U A\cap\complement_U B$$</p>
+      <p>第二式即德摩根律。命题的否定要同时否定结论、改写量词：$\forall x\in D,\ p(x)$ 的否定是 $\exists x\in D,\ \lnot p(x)$。充分必要条件的判断回到定义：$p\Rightarrow q$ 说明 $p$ 充分、$q$ 必要；等价则互为充要。小范围推大范围，把集合的包含关系写出来最不容易错。</p>
+
+      <h2>二、函数</h2>
+      <p>研究一个函数先定定义域，再谈其余性质；定义域没定，单调区间、最值都无从谈起。单调性的定义要用“取值—作差—变形—定号”，奇偶性要求定义域关于原点对称：</p>
+      <p>$$f(-x)=-f(x)\ \text{为奇函数},\qquad f(-x)=f(x)\ \text{为偶函数}$$</p>
+      <p>周期函数满足 $f(x+T)=f(x)$，最小正周期不一定存在。零点存在定理：$f$ 在 $[a,b]$ 上连续且 $f(a)f(b)&lt;0$，则 $(a,b)$ 内至少有一个零点；这只给出存在性，个数要靠单调性补足。二分法每次把区间折半，误差按 $\dfrac{b-a}{2^n}$ 收敛。</p>
+      <p><strong>三类基本函数</strong>：幂函数 $y=x^{\alpha}$（定义域随 $\alpha$ 变化，$\alpha&lt;0$ 时不过原点）；指数函数 $y=a^x$（$a&gt;0,a\ne 1$，值域 $(0,+\infty)$，恒过 $(0,1)$）；对数函数 $y=\log_a x$（定义域 $(0,+\infty)$，是 $y=a^x$ 的反函数）。对数运算的三条</p>
+      <p>$$\log_a(MN)=\log_a M+\log_a N,\quad \log_a\frac{M}{N}=\log_a M-\log_a N,\quad \log_a M^n=n\log_a M$$</p>
+      <p>换底公式 $\log_a b=\dfrac{\log_c b}{\log_c a}$ 用于统一底数；$a^{\log_a b}=b$ 常用于化简。比较大小时常借 $0$、$1$ 作参照，或者取同底后利用单调性。</p>
+      <p><strong>图像变换</strong>：$y=f(x-h)+k$ 平移，$y=f(\omega x)$ 横向伸缩（周期变为原来的 $1/|\omega|$），$y=-f(x)$ 关于 $x$ 轴对称，$y=f(-x)$ 关于 $y$ 轴对称，$y=|f(x)|$ 把 $x$ 轴下方翻上去，$y=f(|x|)$ 保留右侧并镜像。作图的顺序是先伸缩后平移，反过来会差一个系数。</p>
+
+      <h2>三、三角函数</h2>
+      <p>弧度制下弧长 $l=|\alpha|r$、扇形面积 $S=\dfrac12|\alpha|r^2$。同角关系与诱导公式是恒等变形的地基：</p>
+      <p>$$\sin^2\alpha+\cos^2\alpha=1,\qquad \tan\alpha=\frac{\sin\alpha}{\cos\alpha}$$</p>
+      <p>诱导公式的口诀“奇变偶不变、符号看象限”只对 $\dfrac{k\pi}{2}\pm\alpha$ 形式成立，$\alpha$ 一律按锐角处理以定符号。和差角与二倍角：</p>
+      <p>$$\sin(\alpha\pm\beta)=\sin\alpha\cos\beta\pm\cos\alpha\sin\beta,\qquad \cos 2\alpha=\cos^2\alpha-\sin^2\alpha=2\cos^2\alpha-1$$</p>
+      <p>$y=A\sin(\omega x+\varphi)$ 的振幅为 $|A|$、周期 $T=\dfrac{2\pi}{|\omega|}$、初相 $\varphi$。求单调区间或对称轴时把 $\omega x+\varphi$ 整体当成一个角，再套正弦函数的结论。解三角形用正弦定理 $\dfrac{a}{\sin A}=\dfrac{b}{\sin B}=\dfrac{c}{\sin C}=2R$ 与余弦定理 $c^2=a^2+b^2-2ab\cos C$；已知两边及其中一边的对角时可能有两解，需要讨论。</p>
+
+      <h2>四、数列</h2>
+      <p>等差数列 $a_n=a_1+(n-1)d$，前 $n$ 项和 $S_n=\dfrac{n(a_1+a_n)}{2}=na_1+\dfrac{n(n-1)}{2}d$；等比数列 $a_n=a_1q^{n-1}$，$S_n=\dfrac{a_1(1-q^n)}{1-q}$（$q\ne 1$）。$a_n$ 与 $S_n$ 的桥梁是</p>
+      <p>$$a_n=\begin{cases}S_1, & n=1\\ S_n-S_{n-1}, & n\ge 2\end{cases}$$</p>
+      <p>用这条式子时必须单独验证 $n=1$ 是否也符合通项，否则会出现“首项不满足”的错误。求和的常用手段：等差等比对应相乘用错位相减，分式形如 $\dfrac{1}{n(n+k)}$ 用裂项 $\dfrac{1}{k}\left(\dfrac1n-\dfrac1{n+k}\right)$，通项含 $(-1)^n$ 时分奇偶讨论。递推式 $a_{n+1}=pa_n+q$ 可化为等比型，$a_{n+1}=a_n+f(n)$ 用累加，$a_{n+1}=a_n\cdot g(n)$ 用累乘。</p>
+
+      <h2>五、不等式</h2>
+      <p>一元二次不等式先解对应方程的根，再按“大于取两边、小于取中间”写解集（$a&gt;0$ 时）；$\Delta&lt;0$ 时整条抛物线在 $x$ 轴同侧，解集是全体实数或空集。基本不等式</p>
+      <p>$$\frac{a+b}{2}\ge\sqrt{ab}\quad(a,b&gt;0)$$</p>
+      <p>取等的条件是 $a=b$，用之前必须确认两项为正、和为定值或积为定值。含分式或根式的最值常凑项使积为常数，凑不出来时考虑换元或函数单调性。线性规划的画法是：画边界、定可行域（代点判方向）、平移目标函数的等值线找截距极值。</p>
+
+      <h2>六、复数</h2>
+      <p>复数 $z=a+bi$（$a,b\in\mathbb{R}$），$i^2=-1$。模 $|z|=\sqrt{a^2+b^2}$，共轭 $\bar z=a-bi$，且 $z\bar z=|z|^2$。四则运算按多项式处理，除法上下同乘分母的共轭。几何上 $z$ 对应点 $(a,b)$，$|z-z_0|$ 表示两点间距离，于是“$|z-i|=1$ 表示以 $(0,1)$ 为圆心、半径 $1$ 的圆”。实系数一元二次方程若有虚根，必成共轭对出现。</p>
+
+      <h2>七、导数</h2>
+      <p>导数刻画瞬时变化率：$f'(x_0)=\lim_{\Delta x\to 0}\dfrac{f(x_0+\Delta x)-f(x_0)}{\Delta x}$，几何意义是切线斜率，切线方程为 $y-f(x_0)=f'(x_0)(x-x_0)$。常用导数</p>
+      <p>$$(x^n)'=nx^{n-1},\quad (e^x)'=e^x,\quad (\ln x)'=\frac1x,\quad (\sin x)'=\cos x,\quad (\cos x)'=-\sin x$$</p>
+      <p>运算法则：和差直接算，乘积 $(uv)'=u'v+uv'$，商 $\left(\dfrac uv\right)'=\dfrac{u'v-uv'}{v^2}$，复合函数链式 $y'=f'(g(x))g'(x)$。单调性判据：$f'&gt;0$ 则增，$f'&lt;0$ 则减；$f'=0$ 的点只是驻点，需看左右符号变化才能断定极值。求闭区间最值要比较区间端点与各极值点，不能只看驻点。含参数的讨论通常按“导数是否存在零点”“零点是否落在区间内”分类。</p>
+
+      <h2>八、计数与二项式定理</h2>
+      <p>加法原理与乘法原理是所有计数的基础；排列 $A_n^m=\dfrac{n!}{(n-m)!}$，组合 $C_n^m=\dfrac{n!}{m!(n-m)!}$，满足 $C_n^m=C_n^{n-m}$。二项式定理</p>
+      <p>$$(a+b)^n=\sum_{k=0}^{n}\binom{n}{k}a^{n-k}b^k$$</p>
+      <p>通项 $T_{k+1}=\binom{n}{k}a^{n-k}b^k$，求指定项时令指数匹配即可；系数和令 $a=b=1$，奇偶项系数和令 $a=1,b=-1$ 后加减。向量部分（平面向量与空间向量）本质是带方向的代数：坐标运算、数量积 $\vec a\cdot\vec b=|\vec a||\vec b|\cos\theta$、共线与垂直的坐标判据 $x_1y_2-x_2y_1=0$ 与 $x_1x_2+y_1y_2=0$。</p>
+
+      <h2>九、易错点</h2>
+      <ul>
+        <li>讨论集合子集时忘掉空集，或解含参不等式后不检验端点。</li>
+        <li>命题否定只改结论不改量词，或“且”与“或”没有互换。</li>
+        <li>求单调区间不先定定义域，尤其对数与分式函数。</li>
+        <li>三角函数平移时没把 $\omega$ 提出来，平移量算成 $\varphi$ 而不是 $\varphi/\omega$。</li>
+        <li>用 $a_n=S_n-S_{n-1}$ 时不验证 $n=1$。</li>
+        <li>基本不等式忽略“两项为正”与“定值”前提，或忘记写取等条件。</li>
+        <li>把驻点直接当成极值点，不检查左右符号。</li>
+        <li>二项式定理混淆“二项式系数”与“项的系数”。</li>
+      </ul>
+      <p>高中代数的题量靠熟练，正确率靠边界条件。每道题动笔前先问三句：定义域是什么、参数范围是什么、等号能不能取。这三问答清楚了，后面的运算只是执行。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 高中数学代数速览</span>
+      <span>0000002a.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>初中数学代数速览 — Googology Pages</title>
+<link rel="stylesheet" href="../../assets/mfc.css">
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'a']
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="desktop">
+  <main class="win post-win">
+    <div class="titlebar">
+      <span class="app-ico" aria-hidden="true">G</span>
+      <span class="title">博客 — 初中数学代数速览</span>
+      <span class="caps" aria-hidden="true">
+        <span class="cap min"></span>
+        <span class="cap max"></span>
+        <span class="cap close"></span>
+      </span>
+    </div>
+
+    <div class="toolbar">
+      <a class="btn" href="../index.html"><span class="back-mark" aria-hidden="true"></span>全部帖子</a>
+      <div class="addressbar">
+        <span>blog</span>
+        <span class="sep">›</span>
+        <span>postsfiles</span>
+        <span class="sep">›</span>
+        <span class="cur">00000029.html</span>
+      </div>
+    </div>
+
+    <article class="article">
+
+      <h1>初中数学代数速览</h1>
+      <p class="meta">2026-11-21 · 编号 00000029</p>
+
+      <p>初中代数只有一条主线：先把数系从有理数扩到实数，再把具体的数抽象成“式”，最后用方程与函数把数量关系收束起来。代数的难点不在于知识点多，而在于每一步变形都要有依据——等式性质、不等式性质、运算法则，三样东西支撑了几乎全部计算。下面按“数与式—方程与不等式—函数—统计”的顺序把主干过一遍，只列结论与判定条件，细节留给课本例题。</p>
+
+      <h2>一、数与式</h2>
+      <p><strong>有理数。</strong>有理数可以写成两个整数之比 $a=\dfrac{p}{q}$（$q\ne 0$）。数轴上越靠右越大；相反数满足 $a+(-a)=0$；绝对值 $|a|$ 表示数轴上到原点的距离，因此 $|a|=\max(a,-a)$，去掉绝对值时必须先判断符号。四则运算里减法化加法、除法化乘法，符号只看负因数（或负因数个数）的奇偶。乘方与开方是互逆运算，$(-2)^2=4$ 而 $-2^2=-4$，括号的位置决定底数。</p>
+      <p><strong>实数。</strong>无理数不能写成两个整数之比，$\sqrt{2}$、$\pi$ 都是。$\sqrt{a}$（$a\ge 0$）是非负数，$\sqrt{a^2}=|a|$ 而不是 $a$，这是最容易错的一条。实数与数轴上的点一一对应，比较大小可以用作差法，也可以平方后比较（要求两边都非负）。</p>
+      <p><strong>整式。</strong>同类项才能合并；去括号时括号前是负号，括号内每一项都变号。乘法公式只需记住三条：</p>
+      <p>$$(a\pm b)^2=a^2\pm 2ab+b^2,\qquad (a+b)(a-b)=a^2-b^2$$</p>
+      <p>因式分解是乘法的逆过程，常用四种手段：提公因式、套公式、十字相乘、分组分解。分解要分解到每个因式都不能再分为止；十字相乘本质上是在找两个数，其和等于一次项系数、积等于常数项。</p>
+      <pre><code>x² + 5x + 6 = (x + 2)(x + 3)
+2x² − 5x − 3 = (2x + 1)(x − 3)
+a² − b² + a − b = (a − b)(a + b + 1)</code></pre>
+      <p><strong>分式。</strong>分式有意义要求分母不为零，这一点在求取值范围的题目里必须先写。约分约去的是公因式，不是公“项”；通分找最简公分母。分式的值为零要同时满足分子为零、分母不为零。</p>
+      <p><strong>二次根式。</strong>$\sqrt{a}$ 有意义的条件是 $a\ge 0$；$\sqrt{ab}=\sqrt{a}\sqrt{b}$、$\sqrt{\dfrac{a}{b}}=\dfrac{\sqrt{a}}{\sqrt{b}}$ 只对非负数成立。分母有理化通常乘共轭式：$\dfrac{1}{\sqrt{a}+\sqrt{b}}=\dfrac{\sqrt{a}-\sqrt{b}}{a-b}$。</p>
+
+      <h2>二、方程与不等式</h2>
+      <p><strong>一元一次方程。</strong>解法固定为五步：去分母、去括号、移项、合并同类项、系数化为 $1$。去分母时不要漏乘不含分母的项。</p>
+      <p><strong>二元一次方程组。</strong>代入消元与加减消元二选一：某个未知数系数为 $\pm 1$ 时用代入，系数成比例时用加减。解出后回代检验。</p>
+      <p><strong>一元二次方程。</strong>一般式 $ax^2+bx+c=0$（$a\ne 0$）。配方法、公式法、因式分解法三种解法各有适用面。求根公式为</p>
+      <p>$$x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}$$</p>
+      <p>判别式 $\Delta=b^2-4ac$：$\Delta&gt;0$ 有两个不等实根，$\Delta=0$ 有两个相等实根，$\Delta&lt;0$ 无实根。两根满足韦达定理</p>
+      <p>$$x_1+x_2=-\frac{b}{a},\qquad x_1x_2=\frac{c}{a}$$</p>
+      <p>涉及“两根之和、两根之积、两根之差、倒数和”的题，先写成关于 $x_1+x_2$ 与 $x_1x_2$ 的式子再代入，比直接解根快得多。使用前要确认 $\Delta\ge 0$，否则两根不存在。</p>
+      <p><strong>分式方程。</strong>去分母把分式方程化为整式方程，但乘以的可能是零，所以解完必须验根：把根代回原方程的最简公分母，为零则是增根，应舍去。</p>
+      <p><strong>不等式。</strong>性质与等式几乎相同，例外只有一条：两边同乘（或同除）一个负数，不等号方向要反转。解集用区间或数轴表示，空心点表示不含端点、实心点表示含端点。不等式组取各解集的交集；“同大取大、同小取小、大小小大中间找、大大小小无解”只是口诀，画数轴更可靠。</p>
+
+      <h2>三、函数初步</h2>
+      <p>函数是两个变量之间的对应关系：对定义域内每个 $x$，按对应法则有唯一的 $y$ 与之对应。自变量的取值范围要从三处限制里取交集：分母不为零、偶次根号下非负、实际问题中的实际意义。</p>
+      <p><strong>一次函数</strong> $y=kx+b$（$k\ne 0$）。$k$ 是斜率，决定增减：$k&gt;0$ 时 $y$ 随 $x$ 增大而增大；$b$ 是纵截距。它与 $x$ 轴交点的横坐标就是方程 $kx+b=0$ 的解，图像在 $x$ 轴上方的那段对应不等式 $kx+b&gt;0$ 的解集——这是“函数、方程、不等式”三者统一的入口。</p>
+      <p><strong>反比例函数</strong> $y=\dfrac{k}{x}$（$k\ne 0$），定义域 $x\ne 0$，图像是双曲线，两支关于原点对称；$k&gt;0$ 时每支上 $y$ 随 $x$ 增大而减小。注意“在每个象限内”这个限定，不能跨支比较大小。</p>
+      <p><strong>二次函数</strong> $y=ax^2+bx+c$（$a\ne 0$）。配方得顶点式</p>
+      <p>$$y=a\left(x+\frac{b}{2a}\right)^2+\frac{4ac-b^2}{4a}$$</p>
+      <p>对称轴 $x=-\dfrac{b}{2a}$，顶点纵坐标即最值：$a&gt;0$ 时取最小值，$a&lt;0$ 时取最大值。开口方向由 $a$ 的符号决定。图像与 $x$ 轴的交点个数等于 $\Delta$ 的符号所给出的实根个数，于是“判断抛物线与 $x$ 轴有几个交点”“求不等式 $ax^2+bx+c&gt;0$ 的解集”“解一元二次方程”是同一件事的三种问法。给定区间上的最值还要看对称轴是否落在区间内，不能一律代顶点。</p>
+      <p>图像的平移遵循“左加右减、上加下减”：$y=f(x)$ 变为 $y=f(x-h)+k$，图像向右移 $h$、向上移 $k$（$h&lt;0$ 则反向）。</p>
+
+      <h2>四、统计与概率</h2>
+      <p>平均数、中位数、众数描述集中趋势：平均数受极端值影响大，中位数只看位置，众数可以不止一个。方差</p>
+      <p>$$s^2=\frac{1}{n}\sum_{i=1}^{n}(x_i-\bar{x})^2$$</p>
+      <p>衡量波动大小，方差越小越稳定。简单事件的概率用“所求结果数 ÷ 所有等可能结果数”，列表或画树状图把结果枚举完整是避免漏算的常规做法。用频率估计概率时，试验次数越多，频率越接近概率，但两者并不相等。</p>
+
+      <h2>五、易错点</h2>
+      <ul>
+        <li>$\sqrt{a^2}=|a|$ 写成 $a$，忽略 $a&lt;0$ 的情形。</li>
+        <li>去括号时括号前是负号，只改了第一项的符号。</li>
+        <li>一元二次方程忘记 $a\ne 0$，或直接用韦达定理而不检查 $\Delta\ge 0$。</li>
+        <li>分式方程不验根，把增根当成解。</li>
+        <li>不等式两边乘除负数忘记变号。</li>
+        <li>反比例函数跨象限比较函数值大小。</li>
+        <li>求二次函数在给定区间上的最值，直接代顶点而不判断对称轴位置。</li>
+      </ul>
+      <p>把上面这些判定条件记住，剩下的就是把每一道题的计算落到纸面上：写清依据、逐行变形、算完回代。代数题的失分大多不在思路，而在符号与括号上。</p>
+    </article>
+
+    <section class="assets" id="assets" hidden></section>
+
+    <div class="statusbar">
+      <span>博客 — 初中数学代数速览</span>
+      <span>00000029.html</span>
+    </div>
+  </main>
+<script src="../../assets/post.js"></script>
+</body>
+</html>
